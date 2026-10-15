@@ -243,7 +243,7 @@ export function calculateWIPLedger() {
       statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200 font-bold';
     } else if (totalConsumed > 0 && remaining > 0) {
       statusCode = 'PARTIAL';
-      statusText = `🟡 متبقي ${Math.round(remaining).toLocaleString()} م - جاهزة لمرحلة: ${nextStageName}`;
+      statusText = `🟡 متبقي ${Math.round(remaining).toLocaleString()} م (تم سحب جزء إلى: ${consumingStages})`;
       statusBadgeClass = 'bg-amber-50 text-amber-900 border-amber-300 font-bold';
     } else {
       statusCode = 'READY';

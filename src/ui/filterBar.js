@@ -18,10 +18,18 @@ export function initDropdowns() {
   // Stage dropdown
   const stageSelect = document.getElementById('filter-stage');
   if (stageSelect) {
-    stageSelect.innerHTML = '<option value="ALL">جميع مراحل الإنتاج (22)</option>';
+    const seen = new Set();
+    const uniqueStages = [];
     for (const [id, stage] of Object.entries(STAGE_MAP)) {
-      stageSelect.innerHTML += `<option value="${id}">${stage.ar} (${stage.code})</option>`;
+      if (!seen.has(stage.code)) {
+        seen.add(stage.code);
+        uniqueStages.push({ id, stage });
+      }
     }
+    stageSelect.innerHTML = `<option value="ALL">جميع مراحل الإنتاج (${uniqueStages.length})</option>`;
+    uniqueStages.forEach(({ id, stage }) => {
+      stageSelect.innerHTML += `<option value="${id}">${stage.ar} (${stage.code})</option>`;
+    });
   }
 
   // Machine dropdown
@@ -50,7 +58,14 @@ export function applyFilters() {
 
   store.filteredRecords = store.rawRecords.filter(r => {
     if (shiftVal !== 'ALL' && r.ShiftCode !== shiftVal) return false;
-    if (stageVal !== 'ALL' && r.StageID !== parseInt(stageVal, 10)) return false;
+    if (stageVal !== 'ALL') {
+      const sId = parseInt(stageVal, 10);
+      if (sId === 5 || sId === 6) {
+        if (r.StageID !== 5 && r.StageID !== 6) return false;
+      } else {
+        if (r.StageID !== sId) return false;
+      }
+    }
     if (conductorVal !== 'ALL' && !r.ConductorMaterial.includes(conductorVal)) return false;
     if (machineVal !== 'ALL' && r.MachineID !== parseInt(machineVal, 10)) return false;
     if (searchVal) {

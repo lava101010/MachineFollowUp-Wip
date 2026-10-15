@@ -7,7 +7,7 @@ export const STAGE_MAP = {
   3: { name: "S.C TAPE", code: "SCT", ar: "شريط شبه موصل" },
   4: { name: "Buncher", code: "BN", ar: "تجميع وتجديل حزم" },
   5: { name: "Insulation", code: "INS", ar: "عزل البوليمر" },
-  6: { name: "CV-Line", code: "CV-Line", ar: "خط الفلكنة CCV للجهد العالي" },
+  6: { name: "Insulation", code: "INS", ar: "عزل البوليمر" },
   7: { name: "Copper", code: "TAP", ar: "شريط نحاسي" },
   8: { name: "SCWB TAPE", code: "SCW", ar: "شريط شبه موصل مانع للمياه" },
   9: { name: "METALLIC SCREEN", code: "MSC", ar: "شيلد حماية معدني" },

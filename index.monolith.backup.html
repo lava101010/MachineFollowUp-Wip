@@ -984,7 +984,7 @@
       3: { name: "S.C TAPE", code: "SCT", ar: "شريط شبه موصل" },
       4: { name: "Buncher", code: "BN", ar: "تجميع وتجديل حزم" },
       5: { name: "Insulation", code: "INS", ar: "عزل البوليمر" },
-      6: { name: "CV-Line", code: "CV-Line", ar: "خط الفلكنة CCV للجهد العالي" },
+      6: { name: "Insulation", code: "INS", ar: "عزل البوليمر" },
       7: { name: "Copper", code: "TAP", ar: "شريط نحاسي" },
       8: { name: "SCWB TAPE", code: "SCW", ar: "شريط شبه موصل مانع للمياه" },
       9: { name: "METALLIC SCREEN", code: "MSC", ar: "شيلد حماية معدني" },
@@ -1121,10 +1121,18 @@
     function initDropdowns() {
       // Stage dropdown
       const stageSelect = document.getElementById('filter-stage');
-      stageSelect.innerHTML = '<option value="ALL">جميع مراحل الإنتاج (22)</option>';
+      const seen = new Set();
+      const uniqueStages = [];
       for (const [id, stage] of Object.entries(STAGE_MAP)) {
-        stageSelect.innerHTML += `<option value="${id}">${stage.ar} (${stage.code})</option>`;
+        if (!seen.has(stage.code)) {
+          seen.add(stage.code);
+          uniqueStages.push({ id, stage });
+        }
       }
+      stageSelect.innerHTML = `<option value="ALL">جميع مراحل الإنتاج (${uniqueStages.length})</option>`;
+      uniqueStages.forEach(({ id, stage }) => {
+        stageSelect.innerHTML += `<option value="${id}">${stage.ar} (${stage.code})</option>`;
+      });
 
       // Machine dropdown
       const machineSelect = document.getElementById('filter-machine');
@@ -1327,7 +1335,14 @@
 
       filteredRecords = rawRecords.filter(r => {
         if (shiftVal !== 'ALL' && r.ShiftCode !== shiftVal) return false;
-        if (stageVal !== 'ALL' && r.StageID !== parseInt(stageVal)) return false;
+        if (stageVal !== 'ALL') {
+          const sId = parseInt(stageVal);
+          if (sId === 5 || sId === 6) {
+            if (r.StageID !== 5 && r.StageID !== 6) return false;
+          } else {
+            if (r.StageID !== sId) return false;
+          }
+        }
         if (conductorVal !== 'ALL' && !r.ConductorMaterial.includes(conductorVal)) return false;
         if (machineVal !== 'ALL' && r.MachineID !== parseInt(machineVal)) return false;
         if (searchVal) {
@@ -1531,19 +1546,20 @@
     function updateCharts() {
       const isKm = (chartUnitMode !== 'ton'); // Default is Kilometers (كم)
 
-      // 1. Stage Chart (by km or ton)
-      const stageLabels = [];
-      const stageValues = [];
+      // 1. Stage Chart (by km or ton) - grouped by unique stage code
+      const stageAgg = {};
       for (const sId in STAGE_MAP) {
         const st = stageStats[sId];
         if (st) {
+          const code = STAGE_MAP[sId].code;
           const val = isKm ? (st.totalMeters / 1000) : st.totalTons;
           if (val > 0) {
-            stageLabels.push(STAGE_MAP[sId].code);
-            stageValues.push(parseFloat(val.toFixed(2)));
+            stageAgg[code] = (stageAgg[code] || 0) + val;
           }
         }
       }
+      const stageLabels = Object.keys(stageAgg);
+      const stageValues = Object.values(stageAgg).map(v => parseFloat(v.toFixed(2)));
 
       renderChart('chart-stages', {
         type: 'bar',
@@ -2227,7 +2243,7 @@
           statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200 font-bold';
         } else if (totalConsumed > 0 && remaining > 0) {
           statusCode = 'PARTIAL';
-          statusText = `🟡 متبقي ${Math.round(remaining).toLocaleString()} م - جاهزة لمرحلة: ${nextStageName}`;
+          statusText = `🟡 متبقي ${Math.round(remaining).toLocaleString()} م (تم سحب جزء إلى: ${consumingStages})`;
           statusBadgeClass = 'bg-amber-50 text-amber-900 border-amber-300 font-bold';
         } else {
           statusCode = 'READY';

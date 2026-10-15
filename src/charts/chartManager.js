@@ -49,19 +49,20 @@ export function updateCharts() {
   const machineStats = store.machineStats;
   const isKm = (store.chartUnitMode !== 'ton'); // Default is Kilometers (كم)
 
-  // 1. Stage Chart (by km or ton)
-  const stageLabels = [];
-  const stageValues = [];
+  // 1. Stage Chart (by km or ton) - grouped by unique stage code
+  const stageAgg = {};
   for (const sId in STAGE_MAP) {
     const st = stageStats[sId];
     if (st) {
+      const code = STAGE_MAP[sId].code;
       const val = isKm ? (st.totalMeters / 1000) : st.totalTons;
       if (val > 0) {
-        stageLabels.push(STAGE_MAP[sId].code);
-        stageValues.push(parseFloat(val.toFixed(2)));
+        stageAgg[code] = (stageAgg[code] || 0) + val;
       }
     }
   }
+  const stageLabels = Object.keys(stageAgg);
+  const stageValues = Object.values(stageAgg).map(v => parseFloat(v.toFixed(2)));
 
   renderChart('chart-stages', {
     type: 'bar',
