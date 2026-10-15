@@ -1,0 +1,25 @@
+{
+  "name": "energya-cables-3d",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Energya Cables - 3D Digital Twin, Production Analytics & WIP Traceability System",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  },
+  "keywords": [
+    "cables",
+    "digital-twin",
+    "threejs",
+    "manufacturing",
+    "traceability",
+    "wip"
+  ],
+  "author": "Energya Cables Egypt",
+  "license": "MIT"
+}

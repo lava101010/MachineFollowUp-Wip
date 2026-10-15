@@ -1,0 +1,3611 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إنيرجيا للكابلات - التوأم الرقمي للمصنع ولوحة التحليلات 3D | Energya Cables</title>
+  
+  <!-- Google Fonts: Cairo & Tajawal -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            energya: {
+              navy: '#003366',
+              royal: '#00529B',
+              blue: '#0077CC',
+              sky: '#00A3E0',
+              ice: '#EBF4FA',
+              card: '#F4F7FA',
+              copper: '#D97706',
+              aluminum: '#64748B'
+            }
+          },
+          fontFamily: {
+            cairo: ['Cairo', 'sans-serif'],
+            tajawal: ['Tajawal', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- CDN Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <style>
+    body {
+      font-family: 'Cairo', 'Tajawal', sans-serif;
+      background-color: #FFFFFF;
+      color: #1E293B;
+      overflow-x: hidden;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94A3B8;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0077CC;
+    }
+    
+    /* 3D Canvas Container */
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: radial-gradient(circle at 50% 30%, #F8FAFC 0%, #E2E8F0 100%);
+      outline: none;
+    }
+
+    /* Glassmorphism Floating UI */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      box-shadow: 0 10px 25px -5px rgba(0, 82, 155, 0.08), 0 8px 10px -6px rgba(0, 82, 155, 0.04);
+    }
+
+    .badge-energya {
+      background: linear-gradient(135deg, #00529B 0%, #0077CC 100%);
+      color: #FFFFFF;
+    }
+
+    /* Pulse Beacon Animation */
+    @keyframes beacon-pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 8px #00A3E0); }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulse-beacon {
+      animation: beacon-pulse 2s infinite ease-in-out;
+    }
+
+    /* 3D Machine Tooltip */
+    #machine-tooltip {
+      position: absolute;
+      pointer-events: none;
+      z-index: 50;
+      transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+      transform: translate(-50%, -100%);
+      margin-top: -12px;
+    }
+
+    /* Tab active indicator */
+    .tab-btn.active {
+      background-color: #00529B;
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(0, 82, 155, 0.25);
+    }
+    .tab-btn {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Print Style */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-energya-royal selection:text-white flex flex-col min-h-screen">
+
+  <!-- ================= TOP HEADER (Energya Corporate Blue) ================= -->
+  <header class="bg-gradient-to-l from-energya-navy via-energya-royal to-energya-blue text-white shadow-lg sticky top-0 z-40 no-print border-b-2 border-energya-sky/40">
+    <div class="max-w-[1920px] mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3.5">
+        <div class="w-11 h-11 bg-white rounded-xl shadow-md flex items-center justify-center border border-white/20 text-energya-royal text-2xl font-black">
+          <i class="fa-solid fa-industry"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xl sm:text-2xl font-black tracking-tight text-white font-cairo">إنيرجيا للكابلات</span>
+            <span class="bg-energya-sky/30 border border-energya-sky/40 text-[11px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-sky-200">ENERGYA CABLES</span>
+          </div>
+          <p class="text-xs text-sky-100/90 font-medium">التوأم الرقمي ثلاثي الأبعاد للمصنع ومنظومة تحليل الإنتاج الذكية (3D Digital Twin)</p>
+        </div>
+      </div>
+
+      <!-- Action Tools & Data Loader -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        <!-- Hidden file input (supports multiple backup files) -->
+        <input type="file" id="csv-file-input" accept=".csv" multiple class="hidden" onchange="handleFileUpload(event)">
+        
+        <!-- Live CSV Connection Badge -->
+        <div id="csv-sync-badge" class="hidden text-[11px] bg-emerald-950/40 border border-emerald-400/40 px-2.5 py-1 rounded-lg flex items-center gap-1.5 text-emerald-200 font-semibold shadow-inner">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>متصل بالملف المباشر</span>
+        </div>
+
+        <!-- Reload Project CSV Button -->
+        <button onclick="loadProjectCSV(false)" 
+          class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all text-xs sm:text-sm border border-emerald-400/50"
+          title="إعادة قراءة وتحديث البيانات من ملف production_data.csv مباشرة">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>تحديث من الملف</span>
+        </button>
+
+        <!-- Upload CSV Button -->
+        <button onclick="document.getElementById('csv-file-input').click()" 
+          class="flex items-center gap-2 bg-white text-energya-royal hover:bg-sky-50 font-bold px-3.5 py-1.5 rounded-lg shadow-sm hover:shadow transition-all text-xs sm:text-sm border border-white/80"
+          title="يمكنك تحديد ملف واحد أو عدة ملفات CSV من الأجهزة معاً">
+          <i class="fa-solid fa-file-csv text-emerald-600 text-base"></i>
+          <span>رفع ملف خارجي</span>
+        </button>
+
+        <!-- Load Sample Data Button -->
+        <button onclick="loadSampleData()" 
+          class="flex items-center gap-2 bg-energya-sky hover:bg-sky-400 text-white font-bold px-3.5 py-1.5 rounded-lg shadow-sm hover:shadow transition-all text-xs sm:text-sm">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>بيانات تجريبية</span>
+        </button>
+
+        <!-- Reset Camera -->
+        <button onclick="resetCameraView()" title="إعادة ضبط زاوية الرؤية 3D" 
+          class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span class="hidden md:inline">إعادة ضبط الكاميرا</span>
+        </button>
+
+        <!-- Fullscreen 3D Toggle -->
+        <button onclick="toggleFullscreen()" title="وضع ملء الشاشة" 
+          class="bg-white/10 hover:bg-white/20 text-white w-8 h-8 rounded-lg flex items-center justify-center transition">
+          <i class="fa-solid fa-expand"></i>
+        </button>
+
+        <!-- Export CSV Data -->
+        <button onclick="exportDecodedCSV()" title="تصدير البيانات المفلترة لملف CSV" 
+          class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+          <i class="fa-solid fa-download"></i>
+          <span class="hidden md:inline">تصدير CSV</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Active Navigation Tabs Bar -->
+    <div class="bg-white/10 px-4 sm:px-6 py-1 flex items-center gap-2 overflow-x-auto text-xs font-bold border-t border-white/10">
+      <button onclick="switchViewTab('split')" id="tab-split" class="tab-btn active px-3.5 py-1.5 rounded-md flex items-center gap-2">
+        <i class="fa-solid fa-columns"></i>
+        <span>العرض المزدوج (3D + تحليلات)</span>
+      </button>
+      <button onclick="switchViewTab('twin3d')" id="tab-twin3d" class="tab-btn bg-white/15 text-white hover:bg-white/25 px-3.5 py-1.5 rounded-md flex items-center gap-2">
+        <i class="fa-solid fa-cube"></i>
+        <span>المصنع الرقمي 3D فقط</span>
+      </button>
+      <button onclick="switchViewTab('analytics')" id="tab-analytics" class="tab-btn bg-white/15 text-white hover:bg-white/25 px-3.5 py-1.5 rounded-md flex items-center gap-2">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>لوحة الرسوم البيانية والمؤشرات</span>
+      </button>
+      <button onclick="switchViewTab('data')" id="tab-data" class="tab-btn bg-white/15 text-white hover:bg-white/25 px-3.5 py-1.5 rounded-md flex items-center gap-2">
+        <i class="fa-solid fa-table-list"></i>
+        <span>سجل الإنتاج التفصيلي</span>
+        <span id="tab-records-count" class="bg-white/30 text-white px-1.5 py-0.2 rounded-full text-[10px]">0</span>
+      </button>
+      <button onclick="switchViewTab('wip')" id="tab-wip" class="tab-btn bg-emerald-500/25 text-white hover:bg-emerald-500/40 px-3.5 py-1.5 rounded-md flex items-center gap-2 border border-emerald-400/30">
+        <i class="fa-solid fa-boxes-stacked text-emerald-300"></i>
+        <span>أرصدة الـ WIP وتتبع البكرات (داتا فقط)</span>
+        <span id="tab-wip-count" class="bg-emerald-400/40 text-white px-1.5 py-0.2 rounded-full text-[10px]">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= FILTERS & QUICK CONTROLS BAR ================= -->
+  <section class="bg-white border-b border-slate-200 shadow-sm sticky top-[89px] z-30 px-4 sm:px-6 py-2.5 no-print">
+    <div class="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+      
+      <!-- Primary Filters Group -->
+      <div class="flex items-center flex-wrap gap-2.5 flex-1 min-w-[320px]">
+        
+        <!-- Shift Filter -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+          <i class="fa-regular fa-clock text-energya-royal font-bold"></i>
+          <span class="font-bold text-slate-600">الوردية:</span>
+          <select id="filter-shift" onchange="applyFilters()" class="bg-transparent font-semibold text-energya-royal focus:outline-none cursor-pointer">
+            <option value="ALL">جميع الورديات</option>
+            <option value="S1">وردية S1 (صباحية)</option>
+            <option value="S2">وردية S2 (مسائية)</option>
+            <option value="S3">وردية S3 (ليلية)</option>
+            <option value="F1">وردية F1 (جمعة 1)</option>
+            <option value="F2">وردية F2 (جمعة 2)</option>
+          </select>
+        </div>
+
+        <!-- Stage Filter -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+          <i class="fa-solid fa-diagram-project text-energya-royal"></i>
+          <span class="font-bold text-slate-600">OPERATION المرحلة:</span>
+          <select id="filter-stage" onchange="applyFilters()" class="bg-transparent font-semibold text-energya-royal focus:outline-none cursor-pointer max-w-[180px]">
+            <option value="ALL">جميع مراحل الإنتاج (22)</option>
+            <!-- Generated dynamically -->
+          </select>
+        </div>
+
+        <!-- Conductor Material Filter -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+          <i class="fa-solid fa-layer-group text-energya-copper"></i>
+          <span class="font-bold text-slate-600">الخامة:</span>
+          <select id="filter-conductor" onchange="applyFilters()" class="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer">
+            <option value="ALL">جميع الخامات</option>
+            <option value="نحاس">نحاس (Copper)</option>
+            <option value="ألومنيوم">ألومنيوم (Aluminum)</option>
+          </select>
+        </div>
+
+        <!-- Machine Filter -->
+        <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
+          <i class="fa-solid fa-gears text-energya-royal"></i>
+          <span class="font-bold text-slate-600">الماكينة:</span>
+          <select id="filter-machine" onchange="applyFilters()" class="bg-transparent font-semibold text-energya-royal focus:outline-none cursor-pointer max-w-[140px]">
+            <option value="ALL">جميع الماكينات</option>
+            <!-- Generated dynamically -->
+          </select>
+        </div>
+
+        <!-- Global Search Input -->
+        <div class="relative flex-1 min-w-[180px] max-w-xs">
+          <i class="fa-solid fa-magnifying-glass absolute right-2.5 top-2 text-slate-400"></i>
+          <input type="text" id="filter-search" oninput="applyFilters()" placeholder="بحث بـ WorkOrder / البكرة / المشغل..." 
+            class="w-full bg-slate-50 border border-slate-200 rounded-lg pr-8 pl-3 py-1 text-xs focus:ring-1 focus:ring-energya-blue focus:bg-white focus:outline-none transition">
+        </div>
+
+        <!-- Reset Filters Button -->
+        <button onclick="resetFilters()" class="text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>إلغاء الفلاتر</span>
+        </button>
+
+      </div>
+
+      <!-- Quick KPI Badges in Bar -->
+      <div class="flex items-center gap-3 font-semibold text-[11px] text-slate-600">
+        <span class="flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+          الماكينات النشطة: <strong id="bar-active-machines" class="text-slate-900 font-bold">0 / 83</strong>
+        </span>
+        <span class="text-slate-300">|</span>
+        <span>إجمالي الوزن: <strong id="bar-total-ton" class="text-energya-royal font-bold">0.00 طن</strong></span>
+        <span class="text-slate-300">|</span>
+        <span>إجمالي الطول: <strong id="bar-total-meters" class="text-energya-blue font-bold">0 متر</strong></span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= MAIN CONTENT WORKSPACE ================= -->
+  <main class="flex-1 flex flex-col relative w-full overflow-hidden" id="print-area">
+    
+    <!-- TOP SUMMARY KPI CARDS (Always visible or in Split/Analytics) -->
+    <div id="kpi-cards-container" class="max-w-[1920px] mx-auto w-full px-4 sm:px-6 pt-3.5 pb-2">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        
+        <!-- Card 1: Total Weight -->
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200/80 relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-xs font-bold">إجمالي الإنتاج</span>
+            <span class="w-7 h-7 rounded-lg bg-blue-50 text-energya-royal flex items-center justify-center text-xs">
+              <i class="fa-solid fa-weight-hanging"></i>
+            </span>
+          </div>
+          <div>
+            <div class="text-xl font-extrabold text-energya-navy font-cairo flex items-baseline gap-1">
+              <span id="kpi-total-tons">0.00</span>
+              <span class="text-xs font-bold text-slate-500">طن</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>نحاس: <strong id="kpi-copper-tons" class="text-amber-700">0.0</strong> طن</span>
+              <span>ألومنيوم: <strong id="kpi-aluminum-tons" class="text-slate-600">0.0</strong> طن</span>
+            </div>
+          </div>
+          <div class="h-1 bg-gradient-to-r from-energya-royal to-energya-sky rounded-full mt-2"></div>
+        </div>
+
+        <!-- Card 2: Total Cable Length -->
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200/80 relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-xs font-bold">إجمالي الأطوال</span>
+            <span class="w-7 h-7 rounded-lg bg-sky-50 text-energya-sky flex items-center justify-center text-xs">
+              <i class="fa-solid fa-ruler-combined"></i>
+            </span>
+          </div>
+          <div>
+            <div class="text-xl font-extrabold text-energya-blue font-cairo flex items-baseline gap-1">
+              <span id="kpi-total-meters">0</span>
+              <span class="text-xs font-bold text-slate-500">متر</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1">
+              يساوي: <strong id="kpi-total-km" class="text-slate-800">0.0</strong> كيلومتر كابلات
+            </div>
+          </div>
+          <div class="h-1 bg-energya-blue rounded-full mt-2"></div>
+        </div>
+
+        <!-- Card 3: Orders & Reels (TakeUpNo) -->
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200/80 relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-xs font-bold">أوامر العمل (WorkOrders)</span>
+            <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-ring"></i>
+            </span>
+          </div>
+          <div>
+            <div class="text-xl font-extrabold text-emerald-700 font-cairo flex items-baseline gap-1">
+              <span id="kpi-total-reels">0</span>
+              <span class="text-xs font-bold text-slate-500">بكرة</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1">
+              من إجمالي <strong id="kpi-total-orders" class="text-slate-800">0</strong> أمر WorkOrder
+            </div>
+          </div>
+          <div class="h-1 bg-emerald-500 rounded-full mt-2"></div>
+        </div>
+
+        <!-- Card 4: Active Machines Fleet -->
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200/80 relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-xs font-bold">تشغيل الماكينات</span>
+            <span class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-microchip"></i>
+            </span>
+          </div>
+          <div>
+            <div class="text-xl font-extrabold text-purple-700 font-cairo flex items-baseline gap-1">
+              <span id="kpi-active-machines">0</span>
+              <span class="text-xs font-bold text-slate-400">/ <span id="kpi-total-fleet-count">78</span></span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1">
+              نسبة التشغيل: <strong id="kpi-utilization-rate" class="text-slate-800">0%</strong> من الأسطول
+            </div>
+          </div>
+          <div class="h-1 bg-purple-500 rounded-full mt-2"></div>
+        </div>
+
+        <!-- Card 5: Shield & Armour Weight -->
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200/80 relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-xs font-bold">التسليح والشيلد</span>
+            <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-shield-halved"></i>
+            </span>
+          </div>
+          <div>
+            <div class="text-xl font-extrabold text-amber-800 font-cairo flex items-baseline gap-1">
+              <span id="kpi-armour-screen-tons">0.00</span>
+              <span class="text-xs font-bold text-slate-500">طن</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1 flex justify-between">
+              <span>تسليح: <strong id="kpi-armour-tons">0.0</strong></span>
+              <span>شيلد: <strong id="kpi-screen-tons">0.0</strong></span>
+            </div>
+          </div>
+          <div class="h-1 bg-amber-500 rounded-full mt-2"></div>
+        </div>
+
+        <!-- Card 6: Leading Shift & Productivity -->
+        <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200/80 relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 mb-1">
+            <span class="text-xs font-bold">الوردية المتصدرة</span>
+            <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-trophy"></i>
+            </span>
+          </div>
+          <div>
+            <div class="text-xl font-extrabold text-rose-700 font-cairo flex items-baseline gap-1">
+              <span id="kpi-top-shift">--</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1">
+              إنتاج الوردية: <strong id="kpi-top-shift-ton" class="text-slate-800">0.0 طن</strong>
+            </div>
+          </div>
+          <div class="h-1 bg-rose-500 rounded-full mt-2"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- DYNAMIC VIEW WRAPPER -->
+    <div class="flex-1 flex flex-col lg:flex-row w-full max-w-[1920px] mx-auto px-4 sm:px-6 pb-4 gap-4 overflow-hidden min-h-[620px]">
+      
+      <!-- ================= 3D DIGITAL TWIN CONTAINER ================= -->
+      <section id="section-3d" class="flex-1 relative rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-white flex flex-col min-h-[480px]">
+        
+        <!-- 3D Toolbar Overlay -->
+        <div class="absolute top-3 right-3 left-3 z-20 flex flex-wrap items-center justify-between pointer-events-none gap-2">
+          
+          <!-- View Modes Selector -->
+          <div class="glass-panel rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 shadow-md pointer-events-auto text-xs font-bold text-slate-700">
+            <span class="text-energya-royal font-extrabold flex items-center gap-1">
+              <i class="fa-solid fa-eye"></i> نمط الرؤية:
+            </span>
+            <button onclick="set3DColorMode('status')" id="btn-mode-status" class="px-2.5 py-1 rounded-lg bg-energya-royal text-white text-[11px] font-bold transition">
+              حالة التشغيل
+            </button>
+            <button onclick="set3DColorMode('heatmap')" id="btn-mode-heatmap" class="px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] text-slate-700 font-bold transition">
+              خريطة حرارية
+            </button>
+            <button onclick="set3DColorMode('material')" id="btn-mode-material" class="px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] text-slate-700 font-bold transition">
+              الخامات (نحاس/ألومنيوم)
+            </button>
+            <button onclick="set3DColorMode('stage')" id="btn-mode-stage" class="px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] text-slate-700 font-bold transition">
+              المراحل
+            </button>
+          </div>
+
+          <!-- Camera Preset Angles -->
+          <div class="glass-panel rounded-xl px-2 py-1.5 flex items-center gap-1 shadow-md pointer-events-auto text-xs font-semibold text-slate-700">
+            <span class="text-slate-400 font-bold px-1 text-[11px]">الكاميرا:</span>
+            <button onclick="setCameraAngle('overview')" title="منظور شامل" class="px-2 py-1 hover:bg-slate-100 rounded text-[11px] font-bold text-slate-800">
+              <i class="fa-solid fa-globe text-energya-royal"></i> عام
+            </button>
+            <button onclick="setCameraAngle('top')" title="مسقط رأسي علوي" class="px-2 py-1 hover:bg-slate-100 rounded text-[11px] font-bold text-slate-800">
+              <i class="fa-solid fa-arrows-up-down-left-right text-slate-600"></i> علوي 2D
+            </button>
+            <button onclick="setCameraAngle('bay1')" title="صالة 1 - سحب وتجديل" class="px-2 py-1 hover:bg-slate-100 rounded text-[11px] font-bold text-slate-800">
+              صالة 1
+            </button>
+            <button onclick="setCameraAngle('bay3')" title="صالة 3 - خطوط CCV والعزل" class="px-2 py-1 hover:bg-slate-100 rounded text-[11px] font-bold text-energya-royal">
+              صالة 3 (CCV)
+            </button>
+            <button onclick="setCameraAngle('bay4')" title="صالة 4 - التسليح والتغليف" class="px-2 py-1 hover:bg-slate-100 rounded text-[11px] font-bold text-slate-800">
+              صالة 4
+            </button>
+            <button onclick="toggleAnimations()" id="btn-toggle-anim" title="تشغيل / إيقاف حركة الماكينات" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-energya-royal rounded text-[11px] font-bold flex items-center gap-1">
+              <i class="fa-solid fa-play"></i> حركة
+            </button>
+          </div>
+
+        </div>
+
+        <!-- 3D Legend Overlay (Bottom Left) -->
+        <div class="absolute bottom-3 left-3 z-20 glass-panel rounded-xl p-2.5 text-[11px] shadow-md font-semibold text-slate-700 max-w-[220px]">
+          <div class="text-xs font-black text-energya-navy border-b border-slate-200 pb-1 mb-1.5 flex items-center justify-between">
+            <span>دليل المصنع الرقمي</span>
+            <i class="fa-solid fa-circle-info text-energya-blue"></i>
+          </div>
+          <div id="legend-content" class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-sm inline-block"></span>
+              <span>ماكينة نشطة (تعمل حالياً)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-energya-blue shadow-sm inline-block"></span>
+              <span>ماكينة إنتاج قياسي (Top)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-slate-300 shadow-sm inline-block"></span>
+              <span>ماكينة متوقفة / بدون تشغيل</span>
+            </div>
+          </div>
+          <div class="text-[10px] text-slate-400 mt-1.5 pt-1 border-t border-slate-100">
+            * اضغط بالماوس للتدوير، وعجلة الماوس للتكبير، واضغط على أي ماكينة لفحصها.
+          </div>
+        </div>
+
+        <!-- 3D Selected Machine Drawer / Inspector Overlay (Slides from Right) -->
+        <div id="machine-inspector" class="absolute top-14 right-3 z-30 w-80 max-w-[90%] glass-panel rounded-2xl p-4 shadow-xl border border-energya-royal/30 hidden transition-all duration-300 transform translate-x-0">
+          
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-energya-royal text-white flex items-center justify-center font-black text-sm">
+                <i class="fa-solid fa-gear fa-spin-pulse"></i>
+              </div>
+              <div>
+                <h4 id="inspect-machine-name" class="font-black text-slate-900 text-base font-cairo">CCV01</h4>
+                <p id="inspect-machine-stage" class="text-xs text-energya-royal font-bold">خط الفلكنة المستمر (CV-Line)</p>
+              </div>
+            </div>
+            <button onclick="closeMachineInspector()" class="w-6 h-6 rounded-full hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Machine Live Status Tag -->
+          <div id="inspect-machine-status-badge" class="mb-3 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold flex items-center justify-between border border-emerald-200">
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span>الحالة: نشطة وجاري الإنتاج</span>
+            </span>
+            <span id="inspect-machine-id" class="text-[10px] text-slate-500 font-mono">ID: 34</span>
+          </div>
+
+          <!-- Quick Metrics -->
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+              <span class="text-[10px] text-slate-500 block">إجمالي الإنتاج</span>
+              <strong id="inspect-tons" class="text-base font-black text-energya-royal">0.00</strong>
+              <span class="text-[10px] text-slate-500">طن</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+              <span class="text-[10px] text-slate-500 block">الأطوال المنجزة</span>
+              <strong id="inspect-meters" class="text-base font-black text-energya-blue">0</strong>
+              <span class="text-[10px] text-slate-500">متر</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+              <span class="text-[10px] text-slate-500 block">أوامر العمل (WorkOrder)</span>
+              <strong id="inspect-orders" class="text-base font-black text-slate-800">0</strong>
+              <span class="text-[10px] text-slate-500">أمر</span>
+            </div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+              <span class="text-[10px] text-slate-500 block">البكرات المنتجة</span>
+              <strong id="inspect-reels" class="text-base font-black text-emerald-700">0</strong>
+              <span class="text-[10px] text-slate-500">بكرة</span>
+            </div>
+          </div>
+
+          <!-- Material Share -->
+          <div class="mb-3 text-xs">
+            <div class="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
+              <span>توزيع الخامات:</span>
+              <span id="inspect-mat-ratio">نحاس 0% | ألومنيوم 0%</span>
+            </div>
+            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+              <div id="inspect-copper-bar" style="width: 50%" class="bg-amber-600 h-full"></div>
+              <div id="inspect-alum-bar" style="width: 50%" class="bg-slate-500 h-full"></div>
+            </div>
+          </div>
+
+          <!-- Shift & Supervisors info -->
+          <div class="mb-3 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1">
+            <div class="flex justify-between">
+              <span class="text-slate-500">المشغل / المشرف:</span>
+              <span id="inspect-supervisors" class="font-bold text-slate-800 text-left truncate max-w-[150px]">--</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">الورديات المسجلة:</span>
+              <span id="inspect-shifts" class="font-bold text-energya-royal font-mono">--</span>
+            </div>
+          </div>
+
+          <!-- Last Operation Cards & Reels -->
+          <div class="mb-3 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+            <span class="text-[10px] font-black text-slate-500 block border-b border-slate-200 pb-1">تتبع البكرات والكروت (Reels & Cards Traceability):</span>
+            <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+              <div class="bg-blue-50/80 p-1.5 rounded-lg border border-blue-200">
+                <span class="text-[9px] text-blue-700 block font-bold">كارت الإرسال (Send):</span>
+                <strong id="inspect-send-card" class="text-xs font-mono text-blue-900 font-bold block">--</strong>
+                <span class="text-[9px] text-slate-600 block mt-0.5">بكرة الإرسال: <strong id="inspect-payoff-reel" class="font-mono text-slate-800 font-bold">--</strong></span>
+              </div>
+              <div class="bg-emerald-50/80 p-1.5 rounded-lg border border-emerald-200">
+                <span class="text-[9px] text-emerald-700 block font-bold">كارت الاستقبال (Receive):</span>
+                <strong id="inspect-receive-card" class="text-xs font-mono text-emerald-900 font-bold block">--</strong>
+                <span class="text-[9px] text-slate-600 block mt-0.5">بكرة الاستقبال: <strong id="inspect-takeup-reel" class="font-mono text-emerald-900 font-bold">--</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inspector Action Buttons -->
+          <div class="flex items-center gap-2">
+            <button onclick="filterBySelectedMachine()" class="flex-1 bg-energya-royal hover:bg-energya-navy text-white text-xs font-bold py-2 rounded-xl transition shadow">
+              <i class="fa-solid fa-filter"></i> فلترة البيانات بهذه الماكينة
+            </button>
+            <button onclick="resetCameraView()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition" title="إرجاع الكاميرا">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Dynamic Floating 3D Hover Tooltip -->
+        <div id="machine-tooltip" class="glass-panel px-3 py-1.5 rounded-xl shadow-lg border border-energya-sky/40 text-xs font-bold hidden">
+          <div class="flex items-center gap-1.5 text-energya-royal font-black">
+            <i class="fa-solid fa-gear"></i>
+            <span id="tt-name">DR01</span>
+          </div>
+          <div class="text-[11px] text-slate-600 font-semibold" id="tt-stage">سحب الأسلاك (Drawing)</div>
+          <div class="text-[10px] text-emerald-700 font-bold" id="tt-tons">الإنتاج: 0.00 طن</div>
+        </div>
+
+        <!-- WebGL Canvas Container -->
+        <div id="canvas-container"></div>
+      </section>
+
+      <!-- ================= CHARTS & ANALYTICS SECTION ================= -->
+      <section id="section-analytics" class="w-full lg:w-[48%] flex flex-col gap-3.5 overflow-y-auto max-h-[820px] pr-1">
+        
+        <!-- Analytics Header & Unit Toggle (Km vs Ton) -->
+        <div class="bg-white rounded-2xl px-4 py-2.5 shadow-sm border border-slate-200/90 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-xl bg-energya-royal/10 text-energya-royal flex items-center justify-center font-bold text-sm">
+              <i class="fa-solid fa-chart-pie"></i>
+            </span>
+            <div>
+              <h2 class="font-black text-slate-800 text-xs sm:text-sm font-cairo">تحليلات الأداء والإنتاج</h2>
+              <p class="text-[10px] sm:text-[11px] text-slate-500 font-medium">عرض كافة الرسوم البيانية بوحدة القياس المختارة</p>
+            </div>
+          </div>
+
+          <!-- Unit Selector Switcher (Km active by default) -->
+          <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button id="btn-unit-km" onclick="setChartUnitMode('km')"
+              class="px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-energya-royal text-white shadow-sm">
+              <i class="fa-solid fa-ruler-combined"></i>
+              <span>بالكيلومتر (كم)</span>
+            </button>
+            <button id="btn-unit-ton" onclick="setChartUnitMode('ton')"
+              class="px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+              <i class="fa-solid fa-weight-hanging"></i>
+              <span>بالوزن (طن)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 1 Charts: Stage Output & Shift Output -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          
+          <!-- Chart 1: Production by Stage -->
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-energya-royal"></span>
+                <h3 class="font-black text-slate-800 text-xs sm:text-sm font-cairo">الإنتاج حسب OPERATION المرحلة</h3>
+              </div>
+              <span id="chart-stages-unit-sub" class="text-[10px] font-bold text-energya-blue">بالكيلومتر (كم)</span>
+            </div>
+            <div class="relative flex-1 min-h-[200px]">
+              <canvas id="chart-stages"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Shift Distribution -->
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-energya-sky"></span>
+                <h3 class="font-black text-slate-800 text-xs sm:text-sm font-cairo">توزيع إنتاج الورديات (Shifts)</h3>
+              </div>
+              <span class="text-[10px] font-bold text-slate-400">S1, S2, S3, F1, F2</span>
+            </div>
+            <div class="relative flex-1 min-h-[200px]">
+              <canvas id="chart-shifts"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Row 2 Charts: Top 10 Machines & Top Supervisors -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          
+          <!-- Chart 3: Top Machines -->
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                <h3 class="font-black text-slate-800 text-xs sm:text-sm font-cairo">أعلى 10 ماكينات إنتاجاً</h3>
+              </div>
+              <span class="text-[10px] text-emerald-600 font-bold">* اضغط للانتقال في 3D</span>
+            </div>
+            <div class="relative flex-1 min-h-[220px]">
+              <canvas id="chart-machines"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 4: Top Supervisors -->
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                <h3 class="font-black text-slate-800 text-xs sm:text-sm font-cairo">إنتاج المشغل / المشرف</h3>
+              </div>
+              <span class="text-[10px] font-bold text-slate-400">حجم الإنتاج (طن)</span>
+            </div>
+            <div class="relative flex-1 min-h-[220px]">
+              <canvas id="chart-supervisors"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Row 3 Charts: Material Breakdown & Wire Types -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          
+          <!-- Chart 5: Material Composition -->
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+                <h3 class="font-black text-slate-800 text-xs sm:text-sm font-cairo">نسبة خامات الموصلات والتسليح</h3>
+              </div>
+              <span class="text-[10px] font-bold text-slate-400">نحاس / ألومنيوم / شيلد</span>
+            </div>
+            <div class="relative flex-1 min-h-[190px]">
+              <canvas id="chart-materials"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 6: Wire Size / Type Analysis -->
+          <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 flex flex-col">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
+                <h3 class="font-black text-slate-800 text-xs sm:text-sm font-cairo">أهم مقاسات وأقطار الكابلات</h3>
+              </div>
+              <span class="text-[10px] font-bold text-slate-400">Wire Sizes</span>
+            </div>
+            <div class="relative flex-1 min-h-[190px]">
+              <canvas id="chart-wiresizes"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ================= DETAILED DATA TABLES VIEW (PRODUCTION & WIP DATA LEDGER) ================= -->
+    <section id="section-data-table" class="hidden w-full max-w-[1920px] mx-auto px-4 sm:px-6 pb-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+        
+        <!-- Table Section Header & Mode Tabs -->
+        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <!-- Sub-Tab Buttons -->
+          <div class="flex items-center gap-2">
+            <button id="subtab-btn-production" onclick="switchTableSubTab('production')" 
+              class="px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 bg-energya-royal text-white shadow-sm">
+              <i class="fa-solid fa-list-check"></i>
+              <span>سجل الإنتاج العام (Decoded Records)</span>
+            </button>
+            <button id="subtab-btn-wip" onclick="switchTableSubTab('wip')" 
+              class="px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 bg-white text-slate-700 hover:text-energya-royal hover:bg-slate-100 border border-slate-200">
+              <i class="fa-solid fa-boxes-stacked text-emerald-600"></i>
+              <span>سجل أرصدة الـ WIP وتتبع البكرات (WIP Ledger)</span>
+              <span id="wip-tab-badge" class="bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold">0</span>
+            </button>
+          </div>
+
+          <!-- Production Toolbar Actions -->
+          <div id="toolbar-production-actions" class="flex items-center gap-2 text-xs">
+            <span class="text-slate-500">عدد السجلات المعروضة: <strong id="table-total-count" class="text-energya-royal font-bold">0</strong></span>
+            <button onclick="exportDecodedCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-file-excel"></i> تصدير إكسيل / CSV
+            </button>
+            <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-print"></i> طباعة التقرير
+            </button>
+          </div>
+
+          <!-- WIP Toolbar Actions (Data-focused controls only) -->
+          <div id="toolbar-wip-actions" class="hidden flex flex-wrap items-center gap-2 text-xs">
+            <!-- Filter by WIP Status -->
+            <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1">
+              <span class="text-slate-500 font-bold">حالة البكرة:</span>
+              <select id="wip-status-filter" onchange="applyWIPFilters()" class="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer">
+                <option value="ALL">جميع الحالات</option>
+                <option value="FULL">مستهلكة بالكامل (رصيد 0 م)</option>
+                <option value="PARTIAL">بها رصيد متبقي (بواقي أطوال)</option>
+                <option value="READY">جاهزة بنسبة 100% (لم تُسحب بعد)</option>
+              </select>
+            </div>
+            <!-- Live Search -->
+            <div class="relative min-w-[220px]">
+              <i class="fa-solid fa-magnifying-glass absolute right-2.5 top-2 text-slate-400"></i>
+              <input type="text" id="wip-search-input" oninput="applyWIPFilters()" placeholder="بحث برقم البكرة / الكارت / WorkOrder..."
+                class="w-full bg-white border border-slate-200 rounded-lg pr-8 pl-3 py-1 text-xs focus:ring-1 focus:ring-energya-blue focus:outline-none">
+            </div>
+            <span class="text-slate-500 mr-1">عدد البكرات: <strong id="wip-total-count" class="text-energya-royal font-bold">0</strong></span>
+            <button onclick="exportWIPCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-file-excel"></i> تصدير تقرير WIP
+            </button>
+          </div>
+        </div>
+
+        <!-- ================= VIEW 1: GENERAL PRODUCTION TABLE ================= -->
+        <div id="view-production-table" class="flex flex-col">
+          <!-- Table Responsive Wrapper -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs text-slate-700 border-collapse">
+              <thead class="bg-slate-100 text-slate-800 font-black border-b border-slate-200">
+                <tr>
+                  <th class="p-3">WorkOrder</th>
+                  <th class="p-3">التاريخ والوردية</th>
+                  <th class="p-3">OPERATION المرحلة</th>
+                  <th class="p-3">الماكينة (Machine)</th>
+                  <th class="p-3">المشغل / المشرف</th>
+                  <th class="p-3">الخامة والمواصفة</th>
+                  <th class="p-3 bg-blue-50/70 text-energya-royal border-x border-blue-100">
+                    <div class="flex items-center gap-1"><i class="fa-solid fa-paper-plane text-xs"></i> بيانات الإرسال (Send)</div>
+                    <div class="text-[10px] font-normal text-slate-500">كارت الإرسال + بكرة الإرسال</div>
+                  </th>
+                  <th class="p-3 bg-emerald-50/70 text-emerald-800 border-x border-emerald-100">
+                    <div class="flex items-center gap-1"><i class="fa-solid fa-inbox text-xs"></i> بيانات الاستقبال (Receive)</div>
+                    <div class="text-[10px] font-normal text-slate-500">كارت الاستقبال + بكرة الاستقبال</div>
+                  </th>
+                  <th class="p-3">الأطوال (متر)</th>
+                  <th class="p-3">الوزن (طن)</th>
+                  <th class="p-3">نحاس / ألومنيوم</th>
+                  <th class="p-3">الملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="table-body" class="divide-y divide-slate-100 font-medium">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Pagination Footer -->
+          <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs gap-3">
+            <div class="flex items-center gap-2">
+              <span>عرض صفحة <strong id="pagination-current" class="text-energya-royal font-bold">1</strong> من <strong id="pagination-total">1</strong></span>
+              <select id="pagination-limit" onchange="changePageLimit(this.value)" class="bg-white border border-slate-200 rounded px-2 py-0.5 font-bold text-slate-700">
+                <option value="15">15 سجل</option>
+                <option value="30">30 سجل</option>
+                <option value="50">50 سجل</option>
+                <option value="100">100 سجل</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button onclick="prevPage()" id="btn-prev-page" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 disabled:opacity-40 font-bold transition">
+                <i class="fa-solid fa-chevron-right ml-1"></i> السابق
+              </button>
+              <button onclick="nextPage()" id="btn-next-page" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 disabled:opacity-40 font-bold transition">
+                التالي <i class="fa-solid fa-chevron-left mr-1"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= VIEW 2: PURE WIP DATA LEDGER (NO KPIS, NO CHARTS) ================= -->
+        <div id="view-wip-table" class="hidden flex flex-col">
+          <!-- Table Responsive Wrapper -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs text-slate-700 border-collapse">
+              <thead class="bg-slate-100 text-slate-800 font-black border-b border-slate-200">
+                <tr>
+                  <th class="p-3">WorkOrder</th>
+                  <th class="p-3 bg-blue-50/70 text-energya-royal border-x border-blue-100">
+                    <div class="flex items-center gap-1"><i class="fa-solid fa-arrow-turn-down text-xs"></i> مصدر بكرة الإرسال (واخدة من)</div>
+                    <div class="text-[10px] font-normal text-slate-500">بكرة الإرسال + كارت الإرسال</div>
+                  </th>
+                  <th class="p-3 bg-emerald-50/70 text-emerald-800 border-x border-emerald-100">
+                    <div class="flex items-center gap-1"><i class="fa-solid fa-ring text-xs"></i> بكرة وكارت الاستقبال</div>
+                    <div class="text-[10px] font-normal text-slate-500">TakeUpNo + ReceiveCardNo</div>
+                  </th>
+                  <th class="p-3 text-center">المقاس</th>
+                  <th class="p-3">OPERATION المرحلة المُنتِجة</th>
+                  <th class="p-3">المرحلة اللاحقة المسحوب إليها</th>
+                  <th class="p-3 text-left">الطول الأصلي (متر)</th>
+                  <th class="p-3 text-left">المسحوب / المستهلك (متر)</th>
+                  <th class="p-3 text-left font-black text-energya-royal">الطول المتبقي (متر)</th>
+                  <th class="p-3">حالة البكرة والجاهزية</th>
+                  <th class="p-3">الماكينة والوردية</th>
+                </tr>
+              </thead>
+              <tbody id="wip-table-body" class="divide-y divide-slate-100 font-medium">
+                <!-- Dynamically populated with pure data rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- WIP Pagination Footer -->
+          <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs gap-3">
+            <div class="flex items-center gap-2">
+              <span>عرض صفحة <strong id="wip-pagination-current" class="text-energya-royal font-bold">1</strong> من <strong id="wip-pagination-total">1</strong></span>
+              <select id="wip-pagination-limit" onchange="changeWIPPageLimit(this.value)" class="bg-white border border-slate-200 rounded px-2 py-0.5 font-bold text-slate-700">
+                <option value="15">15 سجل</option>
+                <option value="30">30 سجل</option>
+                <option value="50">50 سجل</option>
+                <option value="100">100 سجل</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button onclick="prevWIPPage()" id="btn-wip-prev-page" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 disabled:opacity-40 font-bold transition">
+                <i class="fa-solid fa-chevron-right ml-1"></i> السابق
+              </button>
+              <button onclick="nextWIPPage()" id="btn-wip-next-page" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 disabled:opacity-40 font-bold transition">
+                التالي <i class="fa-solid fa-chevron-left mr-1"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= TOAST NOTIFICATION ================= -->
+  <div id="toast" class="fixed bottom-5 left-5 z-50 glass-panel px-4 py-3 rounded-xl shadow-2xl border border-energya-blue/30 text-xs font-bold text-slate-800 flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div id="toast-icon" class="w-7 h-7 rounded-lg bg-energya-royal text-white flex items-center justify-center">
+      <i class="fa-solid fa-check"></i>
+    </div>
+    <div id="toast-msg">تم تنفيذ العملية بنجاح</div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    /* =========================================================================
+       1. MANDATORY MAPPING DICTIONARIES (Exact matches as required)
+       ========================================================================= */
+    const STAGE_MAP = {
+      1: { name: "Drawing", code: "DRW", ar: "سحب الأسلاك" },
+      2: { name: "Stranding", code: "STD", ar: "تجديل الموصلات" },
+      3: { name: "S.C TAPE", code: "SCT", ar: "شريط شبه موصل" },
+      4: { name: "Buncher", code: "BN", ar: "تجميع وتجديل حزم" },
+      5: { name: "Insulation", code: "INS", ar: "عزل البوليمر" },
+      6: { name: "CV-Line", code: "CV-Line", ar: "خط الفلكنة CCV للجهد العالي" },
+      7: { name: "Copper", code: "TAP", ar: "شريط نحاسي" },
+      8: { name: "SCWB TAPE", code: "SCW", ar: "شريط شبه موصل مانع للمياه" },
+      9: { name: "METALLIC SCREEN", code: "MSC", ar: "شيلد حماية معدني" },
+      10: { name: "NCWB TAPE", code: "NCW", ar: "شريط عازل مانع للمياه" },
+      11: { name: "Assembly", code: "ASM", ar: "تجميع الكابلات" },
+      12: { name: "Bedding", code: "BED", ar: "تبطين داخلي" },
+      13: { name: "LAMINTED ALMUNIUM TAPE", code: "LAT", ar: "شريط ألومنيوم مصفح" },
+      14: { name: "Armouring", code: "ARM", ar: "تسليح الكابلات" },
+      15: { name: "STEEL WIRE TAPE", code: "SWA", ar: "تسليح أسلاك فولاذية" },
+      16: { name: "ALMENUM WIRE", code: "AWA", ar: "تسليح أسلاك ألومنيوم" },
+      17: { name: "Sheathing", code: "SHE", ar: "غلاف نهائي خارجي" },
+      18: { name: "Cooiling", code: "COI", ar: "لف وتعبئة كرتون" },
+      19: { name: "REWIND", code: "RW", ar: "إعادة لف وفحص" },
+      20: { name: "Mica", code: "MIC", ar: "شريط ميكا مقاوم للحريق" },
+      21: { name: "STEEL TAPE ARM", code: "STA", ar: "تسليح شريط صلب" },
+      22: { name: "Copper Tape", code: "CT", ar: "شريط نحاس تدريع" }
+    };
+
+    const MACHINE_MAP = {
+      1: "DR01", 2: "DR02", 3: "DR03", 4: "DR04", 5: "DR05", 6: "DR06", 7: "DR07",
+      9: "RS01", 10: "RS02", 11: "RS03", 12: "RS04", 13: "RS05", 14: "RS06",
+      15: "CS01", 16: "CS02", 17: "DS01", 18: "CN01", 19: "TN01",
+      20: "EX01", 21: "EX02", 22: "EX03", 23: "EX04", 24: "EX05", 25: "EX06", 26: "EX07", 27: "EX08", 28: "EX09", 29: "EX010", 30: "EX011", 31: "EX012", 32: "EX13", 33: "EX14",
+      34: "CCV01", 35: "CCV02", 36: "CCV03", 37: "CCV04", 38: "CCV05",
+      39: "CT01", 40: "CT02", 41: "CT03",
+      42: "CW01", 43: "CW02", 44: "CW03",
+      45: "DT01", 46: "DT02", 47: "DT03", 48: "DT04", 49: "DT2000", 50: "DT2001", 51: "DT2500", 52: "DT1600",
+      53: "SR01", 54: "PR01", 55: "BT01", 56: "SZ01",
+      57: "ST01", 58: "ST02", 59: "ST03", 60: "ST04",
+      61: "BN01", 62: "BN02", 63: "BN03", 64: "BN04", 65: "BN05", 66: "BN06", 67: "BN07", 68: "BN08",
+      69: "CO01", 70: "CO02", 71: "CO03", 72: "CO04", 73: "CO05",
+      74: "RW01", 75: "RW02", 76: "RW03", 77: "RW04",
+      78: "SingleTwist"
+    };
+
+    const SUPERVISOR_MAP = {
+      0: "غير محدد (0)", 1: "رمضان احمد شحاته (1791)", 15: "محمد عبدالرحمن احمد (1351)", 17: "محمد حسني عبد الرؤوف (9425)", 32: "محمد محمد حسيني (9773)",
+      47: "ايمن عبد الحميد عبد القادر (9740)", 61: "رشدي محمد عبدالعظيم (2493)", 62: "محمد حسني ضاحي (1319)", 77: "محمد سامي مصطفي (1765)", 79: "محمد ابراهيم محمود (2193)",
+      90: "احمد محمد مصطفي محمد (2246)", 96: "علي محمد علي كامل (2411)", 100: "محمد السيد محمد (9430)", 105: "محمود حسين عبد الحليم (1652)", 107: "عطيه شوقي عبد الفتاح (497)",
+      108: "احمد محمد مصطفي (9355)", 110: "محمد وائل عبد الجليل (9690)", 111: "عبده علي عبد المعبود (9814)", 114: "احمد عبد الحميد السيد (9357)", 115: "محمد اشرف حسين (9354)",
+      117: "رضا صلاح علي (9636)", 119: "محمد عبدالفتاح فهمي (9874)", 120: "احمد محمد عبد السميع (9973)", 123: "محمد مجدي حسين (2003)", 126: "محمد احمد كامل (9319)",
+      128: "عبد الغني محمد ابراهيم (9763)", 132: "شريف رمضان عبد العظيم (1787)", 133: "محمود حشمت عبدالجواد (151)", 134: "محمد محرز السعيد (9359)", 135: "احمد عبد الله جوده (9812)",
+      141: "محمود حمدي صابر (9307)", 142: "وائل عبد العليم محمد (1615)", 143: "احمد محمد محمد الشحات (9390)", 144: "احمد مجدي شريف (9627)", 148: "حامد وجيه حامد (9824)",
+      150: "صلاح عادل عبد النبي (9243)", 152: "محمد فوزي محمد (9239)", 153: "محمد امام الشافعي (1800)", 155: "محمود صلاح محمد (9559)", 159: "يسري خليفة محمد (1649)",
+      160: "احمد عبد القادر احمد (1576)", 161: "علاء الصباحي محمد (266)", 165: "احمد فوزي رضوان (1557)", 166: "احمد سامح عبد الحميد (9919)", 167: "محمد ابراهيم الدسوقي (1736)",
+      172: "وحيد محمد عبدالرحيم (326)", 173: "احمد عبده السيد (95)", 174: "حازم حامد وهبه (150)", 175: "محمد عصمت محمد (1433)", 176: "سيد ماهر السيد (41)",
+      177: "رمضان صبري السيد (1610)", 184: "محمد عادل عبدالحي (1153)", 185: "محمد حسين حسن ابراهيم (1633)", 186: "محمد علي احمد محمود (2470)", 188: "مصطفي محمود حافظ (9039)",
+      189: "محمود احمد عبدالعزيز (9883)", 190: "فؤاد توفيق فؤاد (1833)", 194: "عبدالرحمن محمد ابويحيي (9796)", 195: "احمد فرج شحاته (9246)", 196: "علي محمد علي بنداري (9608)",
+      197: "محمد عادل فتحي (9460)", 198: "احمد ابراهيم صلاح (2013)", 200: "محمد احمد محمدي مسلم (9806)", 204: "محمد مجدي الشحات (9296)", 205: "رضا محمد حسن (9126)",
+      206: "احمد سمير سلامه (1763)", 207: "ابراهيم حسين ابراهيم (9595)", 208: "رشدي محمد حسانين (9198)", 209: "عادل صالح محمد محمد (1637)", 210: "محمد عمر مصطفي (9946)",
+      216: "حلمي محمد خليل ابراهيم (2445)", 217: "احمد امين السيد عبدالمقصود (1639)", 218: "ضياء عبدالمنعم عبدالفتاح (848)", 220: "عادل فتحي عبدالقادر عبدالله (2207)", 223: "محمد محمود شعبان عطيه (1861)",
+      224: "زياد سلامه زكي محمد موسي (1866)", 225: "علاء حسن محمد (292)", 226: "ناصر محمد عبدالفتاح (1257)", 227: "محمد ثابت عبد الغنى (140)", 229: "محمد متولى عيسى (387)",
+      230: "اسلام اسماعيل محمد (1788)", 231: "محمود امام السيد (9146)", 232: "احمد عاطف صبحي (9123)", 233: "محمد عبدالناصر فكري (9841)", 234: "محمد محمد السيد الشيخ (2045)",
+      236: "خالد محمد عبدالفتاح (9387)", 241: "محمد سليمان محمد (1105)", 242: "السيد سمير السيد (2220)", 243: "محمد ياسر نور الدين (9374)", 244: "كريم ايهاب عبدالوهاب (9305)",
+      245: "محمد سمير عبدالفتاح (9613)", 246: "اسلام فايز محمد محمد (9642)", 249: "نادر ابراهيم محمد (2113)", 254: "محمود سمير اسماعيل (1014)", 255: "صالح رمضان شفيق (9300)",
+      256: "علي محمد عبدالمقصود (9828)", 261: "محمد محمد مصطفي شاهين (9839)", 264: "حسين سعيد جوده الشع (1650)", 266: "احمد السيد على (904)", 267: "السيد محمد السيد ابواليزيد (9717)",
+      272: "محمد هاني محمد جمعه (9911)", 276: "محمد محمود عبدالرؤوف (9328)", 282: "ابراهيم رمزي محمود (9794)", 288: "احمد محمد فياض علي (2464)", 289: "محمد عزت السعيد (283)",
+      290: "محمد نصر مصطفي (9225)", 303: "محمد محمد محمود متولي (2461)", 304: "عبدالرحمن محمد عبدالرحمن (1158)", 305: "عبدالعظيم مصطفي السيد (196)", 319: "محمد السيد محمد (9233)",
+      320: "مؤمن صلاح عطيه زيد (9188)", 321: "السيد السيد ابراهيم (9605)", 322: "زياد وحيد صابر سعيد (2052)", 323: "عبدالله عثمان امين (9886)", 328: "طارق حسين محمد الهادي (9606)",
+      329: "اسامه سعيد فهمى (914)", 330: "محمد عباس عطا محمد (1013)", 331: "احمد السيد رجب (9986)", 332: "محمد جميل محمد رمضان (9831)", 336: "محمود محمد رضا نصر (1870)",
+      337: "احمد نجاح السيد (9127)", 338: "احمد عبدالعليم عبدالعزيز (9639)", 339: "محمد يحيى عبدالعليم (388)", 340: "حازم امام حامد (2236)", 341: "محمد ناصر عبدالله سويلم (1993)",
+      342: "عزت ياسر عزت باشا (9679)", 345: "كريم محمود السيد (1956)", 346: "احمد حسن احمد (15)", 347: "عبدالله شكري عبدالله (1975)", 349: "عبدالرحمن السيد مصطفي (2130)",
+      350: "محمد ناجح فتحي (1981)", 351: "عبدالله اشرف عبدالعظيم (9826)", 352: "محمود عزت عبدالفتاح (1296)", 355: "احمد نادي ابوعجيله (9348)", 356: "محمد علي محمد (9655)",
+      357: "احمد ضياء فخري عبدالجواد (2006)", 358: "عبدالله حافظ جبر (467)", 361: "محمد طه بهي (9223)", 363: "ياسر محمود توفيق (313)", 366: "سليمان يوسف محمود سليمان (9837)",
+      367: "ايهاب محمد عبدالمجيد (1387)", 368: "ايهاب سعيد محمد (367)", 369: "حمدى ماهر حسن (280)", 370: "سعد احمد محمد شتا (1107)", 371: "احمد على ابراهيم (9125)",
+      372: "عاطف عبدالفتاح محمد (1749)", 374: "احمد ماهر عبدالفتاح (9725)", 377: "احمد محمد احمد علي (9890)", 378: "عمر حسن عبدالمولي (1789)", 379: "محمد حمدى سيد عبد الله (1745)",
+      380: "علي احمد محمد علي (1751)", 381: "محمد عطيه ابراهيم (9197)", 382: "محمد السيد حسني (9686)", 383: "محمد منتصر ابراهيم (9885)", 384: "محمد صلاح محمد مطلق (9974)",
+      385: "محمود محمد وجدي (9682)", 386: "الحسيني فرج جمال (9656)", 388: "عبدالعظيم صلاح عبدالرؤوف (1931)", 389: "محمد السيد عباس (2159)", 390: "احمد محمد محمود ابوالخير (2197)",
+      391: "محمد السيد الشبراوي (9379)", 392: "قاسم عبدالله قاسم (978)", 393: "حسن ابراهيم اسماعيل (9378)", 394: "احمد عبدالجيد محمد (9401)", 395: "احمد حسن عطيه (9377)",
+      396: "عبدالجليل بدوي متولي (9719)", 404: "محمود محمد عبدالوهاب (9097)", 405: "اسلام اشرف عبدالحميد احمد (9914)", 406: "عمار محمد عبدالفتاح (9966)", 408: "عبدالرحمن سليمان محمد سليمان (9938)",
+      409: "يوسف جلال محمد كامل (1933)", 412: "مجدى السيد الدمرداش (598)", 413: "عبدالله السيد عبدالله (264)", 414: "محمد عبد الحميد على (380)", 416: "اسلام بدوي السيد (9406)",
+      417: "محمد يسري حسن (1755)", 418: "كامل محمد محمود (1229)", 419: "ابراهيم محمد ابراهيم محمد (1744)", 420: "احمد طلبه احمد حميده (1809)", 421: "محمد خالد احمد علي (9818)",
+      422: "عمرو احمد السيد (1946)", 423: "احمد عماد محمود السعيد (9314)", 424: "إسماعيل محمد بندارى (790)", 425: "رضا السيد اسماعيل (348)", 426: "محمد الشحات ابراهيم (9007)",
+      428: "السيد محمد عبدالفتاح (929)", 430: "عادل محمد رمضان (1403)", 431: "عطيه محمد عيد (852)", 432: "احمد فتوح السيد مصطفى (854)", 433: "اسماعيل عصام اسماعيل محمد (1882)",
+      434: "وائل محمد حسن (2121)", 436: "احمد زكريا ابراهيم (421)", 447: "محمود ابراهيم الدسوقى (209)", 448: "محمود عبدالحميد محمد (1591)", 449: "محمد شملول محمد (138)",
+      454: "محمد متولي عبده (1264)", 455: "احمد زكريا شحاته (1767)", 465: "محمد السيد كمال الدين محمد (2186)", 468: "سمير فوزي عبدالغني (2200)", 469: "أحمد محمود محمود سلامة (1564)",
+      471: "محمد محمد خيري (882)", 477: "فارس السيد محمد مرسي (9877)", 480: "منصور عاطف منصور (1683)", 491: "احمد محمد عبدالحميد (9308)", 493: "مصطفى محمود عبده (2549)",
+      502: "حماد عبدالعال طه حماد (1555)", 504: "محمد ثابت محمد عمر (9174)", 519: "شريف احمد محمد حسن (153)", 520: "محمد صابر صالح (9260)", 522: "اسلام صبحي محمد علي (2505)",
+      523: "ياسر متولى شركس (917)", 524: "مسعد دسوقى عبدالرحمن (187)", 526: "محمد عبدالقادر عبدالله (645)"
+    };
+
+    /* Helper lookup functions */
+    function getStageName(id) {
+      const s = STAGE_MAP[id];
+      return s ? `${s.ar} (${s.code})` : `مرحلة ${id}`;
+    }
+    function getStageEnglishName(id) {
+      const s = STAGE_MAP[id];
+      if (!s) return `Stage ${id}`;
+      if (s.name.toUpperCase() === s.code.toUpperCase()) {
+        return s.name;
+      }
+      return `${s.name} (${s.code})`;
+    }
+    function getMachineName(id) {
+      return MACHINE_MAP[id] || `ماكينة ${id}`;
+    }
+    function getSupervisorName(id) {
+      return SUPERVISOR_MAP[id] || `مشرف رقم (${id})`;
+    }
+
+    /* =========================================================================
+       2. APPLICATION STATE & GLOBALS
+       ========================================================================= */
+    let rawRecords = [];
+    let filteredRecords = [];
+    let machineStats = {}; // keyed by MachineID
+    let stageStats = {};   // keyed by StageID
+    let selectedMachineId = null;
+    let current3DMode = 'status'; // 'status' | 'heatmap' | 'material' | 'stage'
+    let animationsEnabled = true;
+    let tableCurrentPage = 1;
+    let tablePageSize = 15;
+    let charts = {};
+
+    // WIP Data Ledger State (Pure Data - No KPIs)
+    let wipLedger = [];
+    let filteredWIP = [];
+    let wipCurrentPage = 1;
+    let wipPageSize = 15;
+    let currentTableSubTab = 'production';
+
+    // 3D Scene Objects
+    let scene, camera, renderer, controls, raycaster, mouse;
+    let machineMeshes = {}; // keyed by MachineID -> Group
+    let animatedSpools = [];
+    let highlightRing = null;
+    let is3DLoopRunning = true;
+    let animFrameId = null;
+
+    /* =========================================================================
+       3. POPULATE FILTER DROPDOWNS
+       ========================================================================= */
+    function initDropdowns() {
+      // Stage dropdown
+      const stageSelect = document.getElementById('filter-stage');
+      stageSelect.innerHTML = '<option value="ALL">جميع مراحل الإنتاج (22)</option>';
+      for (const [id, stage] of Object.entries(STAGE_MAP)) {
+        stageSelect.innerHTML += `<option value="${id}">${stage.ar} (${stage.code})</option>`;
+      }
+
+      // Machine dropdown
+      const machineSelect = document.getElementById('filter-machine');
+      const fleetCount = Object.keys(MACHINE_MAP).length;
+      machineSelect.innerHTML = `<option value="ALL">جميع الماكينات (${fleetCount})</option>`;
+      for (const [id, code] of Object.entries(MACHINE_MAP)) {
+        machineSelect.innerHTML += `<option value="${id}">${code} [${id}]</option>`;
+      }
+    }
+
+    /* =========================================================================
+       4. CSV PARSER & DATA NORMALIZATION (Multi-File Backup Merging Support)
+       ========================================================================= */
+    function parseCSVData(csvString) {
+      if (!csvString || csvString.trim().length === 0) {
+        normalizeAndLoadRecords([]);
+        showToast('تمت قراءة ملف CSV فارغ (0 سجلات)', 'info');
+        return;
+      }
+
+      Papa.parse(csvString, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: true,
+        complete: function(results) {
+          const rows = results.data || [];
+          normalizeAndLoadRecords(rows);
+          if (rows.length > 0) {
+            showToast(`تم تحديث البيانات من الملف بنجاح (${rawRecords.length} سجلاً)!`, 'success');
+          } else {
+            showToast('ملف البيانات فارغ (0 سجلات)', 'info');
+          }
+        },
+        error: function(err) {
+          showToast('حدث خطأ أثناء قراءة ملف CSV: ' + err.message, 'error');
+        }
+      });
+    }
+
+    function handleFileUpload(event) {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
+
+      if (files.length === 1) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          parseCSVData(e.target.result);
+        };
+        reader.readAsText(files[0]);
+        event.target.value = '';
+        return;
+      }
+
+      // Multi-file reading from backup devices and merging
+      let allRows = [];
+      let filesRead = 0;
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          Papa.parse(e.target.result, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: true,
+            complete: function(results) {
+              if (results.data && results.data.length > 0) {
+                allRows = allRows.concat(results.data);
+              }
+              filesRead++;
+              if (filesRead === files.length) {
+                if (allRows.length > 0) {
+                  normalizeAndLoadRecords(allRows);
+                  showToast(`تم قراءة ودمج ${files.length} ملفات أجهزة بنجاح بإجمالي ${rawRecords.length} سجلاً!`, 'success');
+                } else {
+                  showToast('الملفات المحددة لا تحتوي على بيانات صالحة', 'error');
+                }
+              }
+            },
+            error: function(err) {
+              filesRead++;
+              showToast(`خطأ في قراءة ملف ${file.name}: ` + err.message, 'error');
+            }
+          });
+        };
+        reader.readAsText(file);
+      });
+      event.target.value = ''; // reset input
+    }
+
+    function cleanReelOrCard(val) {
+      if (val === null || val === undefined) return "without";
+      const s = String(val).trim();
+      const lower = s.toLowerCase();
+      if (!s || s === "0" || lower === "without" || s === "-" || lower === "null" || lower === "none" || lower === "nan" || lower === "undefined") {
+        return "without";
+      }
+      return s;
+    }
+
+    function normalizeCode(val) {
+      if (val === null || val === undefined) return "without";
+      const cleaned = cleanReelOrCard(val);
+      if (cleaned === "without") return "without";
+      // Strip hyphens, underscores, slashes, spaces, dots, and convert to uppercase
+      return cleaned.toUpperCase().replace(/[\s\-_/.]/g, '').trim();
+    }
+
+    function formatWireSize(wireSize, coreCount) {
+      if (wireSize === null || wireSize === undefined) return '';
+      let s = String(wireSize).trim();
+      if (!s) return '';
+
+      // 1. Remove mm2, mm², MM2, MM, mm
+      s = s.replace(/mm[²2]?/gi, '').trim();
+
+      // 2. Replace any asterisk (*) or uppercase X with lowercase x
+      s = s.replace(/[*X]/g, 'x');
+
+      // 3. Remove spaces around x, +, and / (e.g. "3 x 400" -> "3x400", "240 + 120" -> "240+120")
+      s = s.replace(/\s*([x+/])\s*/g, '$1').trim();
+
+      // 4. If it already contains an operator (x, +, /), return it directly
+      const hasOperator = s.includes('x') || s.includes('+') || s.includes('/');
+      if (hasOperator) {
+        return s;
+      }
+
+      // 5. If it's a plain number (e.g. "25"), combine with coreCount if valid
+      const cores = parseInt(coreCount);
+      if (cores && cores > 0) {
+        return `${cores}x${s}`;
+      }
+      return s;
+    }
+
+    function normalizeAndLoadRecords(data) {
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        rawRecords = [];
+        const tabRecEl = document.getElementById('tab-records-count');
+        if (tabRecEl) tabRecEl.innerText = 0;
+        calculateWIPLedger();
+        applyFilters();
+        return;
+      }
+
+      rawRecords = data.map((row, idx) => {
+        const coreCount = parseInt(row.CoreCount) || 1;
+        const cleanSize = formatWireSize(row.WireSize, coreCount);
+        return {
+          OrderID: String(row.OrderID || `ORD-${1000 + idx}`).trim(),
+          RegDate: String(row.RegDate || '2026-10-14').trim(),
+          ShiftCode: String(row.ShiftCode || 'S1').trim().toUpperCase(),
+          StageID: parseInt(row.StageID) || 1,
+          MachineID: parseInt(row.MachineID) || 1,
+          SupervisorID: parseInt(row.SupervisorID) || 0,
+          ConductorMaterial: String(row.ConductorMaterial || 'نحاس').trim(),
+          WireType: String(row.WireType || 'كابل قوى').trim(),
+          CoreCount: coreCount,
+          WireSize: cleanSize,
+          LengthMeters: parseFloat(row.LengthMeters) || 0,
+          TakeUpNo: cleanReelOrCard(row.TakeUpNo),
+          StatusID: parseInt(row.StatusID) || 1,
+          WeightTon: parseFloat(row.WeightTon) || 0,
+          CreatedBy: String(row.CreatedBy || 'SYSTEM').trim(),
+          LastModified: String(row.LastModified || '').trim(),
+          FactoryID: parseInt(row.FactoryID) || 1,
+          RecordID: String(row.RecordID || `REC-${idx + 1}`).trim(),
+          PayOffNo: cleanReelOrCard(row.PayOffNo),
+          Remark: String(row.Remark || 'إنتاج منتظم مطابقة للمواصفات').trim(),
+          PalletRef: String(row.PalletRef || `PAL-${idx + 1}`).trim(),
+          CopperTon: parseFloat(row.CopperTon) || 0,
+          AluminumTon: parseFloat(row.AluminumTon) || 0,
+          ScreenTon: parseFloat(row.ScreenTon) || 0,
+          ArmourTon: parseFloat(row.ArmourTon) || 0,
+          SendCardNo: cleanReelOrCard(row.SendCardNo),
+          ReceiveCardNo: cleanReelOrCard(row.ReceiveCardNo),
+          InputLengths: parseFloat(row.InputLengths) || 0
+        };
+      });
+
+      // Update Header Badges
+      const tabRecEl = document.getElementById('tab-records-count');
+      if (tabRecEl) tabRecEl.innerText = rawRecords.length;
+
+      // Calculate WIP Ledger balances
+      calculateWIPLedger();
+
+      // Apply standard filters and render
+      applyFilters();
+    }
+
+    /* =========================================================================
+       5. FILTERING & AGGREGATION LOGIC
+       ========================================================================= */
+    function applyFilters() {
+      const shiftVal = document.getElementById('filter-shift').value;
+      const stageVal = document.getElementById('filter-stage').value;
+      const conductorVal = document.getElementById('filter-conductor').value;
+      const machineVal = document.getElementById('filter-machine').value;
+      const searchVal = document.getElementById('filter-search').value.toLowerCase().trim();
+
+      filteredRecords = rawRecords.filter(r => {
+        if (shiftVal !== 'ALL' && r.ShiftCode !== shiftVal) return false;
+        if (stageVal !== 'ALL' && r.StageID !== parseInt(stageVal)) return false;
+        if (conductorVal !== 'ALL' && !r.ConductorMaterial.includes(conductorVal)) return false;
+        if (machineVal !== 'ALL' && r.MachineID !== parseInt(machineVal)) return false;
+        if (searchVal) {
+          const normSearch = normalizeCode(searchVal);
+          const matchOrder = r.OrderID.toLowerCase().includes(searchVal);
+          const matchTakeUp = r.TakeUpNo.toLowerCase().includes(searchVal) || (normSearch !== 'without' && normalizeCode(r.TakeUpNo).includes(normSearch));
+          const matchPayOff = r.PayOffNo.toLowerCase().includes(searchVal) || (normSearch !== 'without' && normalizeCode(r.PayOffNo).includes(normSearch));
+          const matchSendCard = r.SendCardNo.toLowerCase().includes(searchVal) || (normSearch !== 'without' && normalizeCode(r.SendCardNo).includes(normSearch));
+          const matchReceiveCard = r.ReceiveCardNo.toLowerCase().includes(searchVal) || (normSearch !== 'without' && normalizeCode(r.ReceiveCardNo).includes(normSearch));
+          const matchMach = getMachineName(r.MachineID).toLowerCase().includes(searchVal);
+          const matchSup = getSupervisorName(r.SupervisorID).toLowerCase().includes(searchVal);
+          const matchWire = r.WireType.toLowerCase().includes(searchVal);
+          if (!matchOrder && !matchTakeUp && !matchPayOff && !matchSendCard && !matchReceiveCard && !matchMach && !matchSup && !matchWire) return false;
+        }
+        return true;
+      });
+
+      computeAggregates();
+      updateKPICards();
+      updateCharts();
+      updateTable();
+      update3DMachines();
+    }
+
+    function resetFilters() {
+      document.getElementById('filter-shift').value = 'ALL';
+      document.getElementById('filter-stage').value = 'ALL';
+      document.getElementById('filter-conductor').value = 'ALL';
+      document.getElementById('filter-machine').value = 'ALL';
+      document.getElementById('filter-search').value = '';
+      applyFilters();
+      showToast('تمت إعادة ضبط جميع الفلاتر', 'info');
+    }
+
+    function filterBySelectedMachine() {
+      if (!selectedMachineId) return;
+      document.getElementById('filter-machine').value = String(selectedMachineId);
+      applyFilters();
+      closeMachineInspector();
+      showToast(`تم تطبيق الفلترة على الماكينة: ${getMachineName(selectedMachineId)}`, 'info');
+    }
+
+    function computeAggregates() {
+      machineStats = {};
+      stageStats = {};
+
+      // Initialize all machines
+      for (const mId in MACHINE_MAP) {
+        machineStats[mId] = {
+          id: parseInt(mId),
+          name: MACHINE_MAP[mId],
+          totalTons: 0,
+          totalMeters: 0,
+          ordersCount: 0,
+          reelsCount: 0,
+          copperTons: 0,
+          aluminumTons: 0,
+          screenTons: 0,
+          armourTons: 0,
+          shifts: new Set(),
+          supervisors: new Set(),
+          records: [],
+          stageId: null
+        };
+      }
+
+      // Aggregate filtered records
+      filteredRecords.forEach(r => {
+        const m = machineStats[r.MachineID];
+        if (m) {
+          m.totalTons += r.WeightTon;
+          m.totalMeters += r.LengthMeters;
+          m.ordersCount += 1;
+          m.reelsCount += 1;
+          m.copperTons += r.CopperTon;
+          m.aluminumTons += r.AluminumTon;
+          m.screenTons += r.ScreenTon;
+          m.armourTons += r.ArmourTon;
+          m.shifts.add(r.ShiftCode);
+          m.supervisors.add(r.SupervisorID);
+          m.records.push(r);
+          m.stageId = r.StageID;
+        }
+
+        if (!stageStats[r.StageID]) {
+          stageStats[r.StageID] = {
+            id: r.StageID,
+            totalTons: 0,
+            totalMeters: 0,
+            ordersCount: 0
+          };
+        }
+        stageStats[r.StageID].totalTons += r.WeightTon;
+        stageStats[r.StageID].totalMeters += r.LengthMeters;
+        stageStats[r.StageID].ordersCount += 1;
+      });
+    }
+
+    /* =========================================================================
+       6. UPDATE KPI DASHBOARD CARDS
+       ========================================================================= */
+    function updateKPICards() {
+      let totalTons = 0;
+      let totalMeters = 0;
+      let copperTons = 0;
+      let alumTons = 0;
+      let screenTons = 0;
+      let armourTons = 0;
+      let uniqueOrders = new Set();
+      let uniqueReels = new Set();
+      let shiftOutput = { S1: 0, S2: 0, S3: 0, F1: 0, F2: 0 };
+      let activeMachinesCount = 0;
+
+      filteredRecords.forEach(r => {
+        totalTons += r.WeightTon;
+        totalMeters += r.LengthMeters;
+        copperTons += r.CopperTon;
+        alumTons += r.AluminumTon;
+        screenTons += r.ScreenTon;
+        armourTons += r.ArmourTon;
+        uniqueOrders.add(r.OrderID);
+        if (r.TakeUpNo && r.TakeUpNo !== 'without') uniqueReels.add(r.TakeUpNo);
+        if (shiftOutput[r.ShiftCode] !== undefined) {
+          shiftOutput[r.ShiftCode] += r.WeightTon;
+        }
+      });
+
+      for (const mId in machineStats) {
+        if (machineStats[mId].totalTons > 0) activeMachinesCount++;
+      }
+
+      // Top Shift
+      let topShift = 'S1';
+      let topShiftTon = 0;
+      for (const [sh, val] of Object.entries(shiftOutput)) {
+        if (val > topShiftTon) {
+          topShiftTon = val;
+          topShift = sh;
+        }
+      }
+
+      // Update Card Elements
+      document.getElementById('kpi-total-tons').innerText = totalTons.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('kpi-copper-tons').innerText = copperTons.toFixed(1);
+      document.getElementById('kpi-aluminum-tons').innerText = alumTons.toFixed(1);
+      
+      document.getElementById('kpi-total-meters').innerText = Math.round(totalMeters).toLocaleString('en-US');
+      document.getElementById('kpi-total-km').innerText = (totalMeters / 1000).toFixed(2);
+      
+      document.getElementById('kpi-total-reels').innerText = uniqueReels.size;
+      document.getElementById('kpi-total-orders').innerText = uniqueOrders.size;
+      
+      document.getElementById('kpi-active-machines').innerText = activeMachinesCount;
+      const totalMachinesFleet = Object.keys(MACHINE_MAP).length;
+      const elFleet = document.getElementById('kpi-total-fleet-count');
+      if (elFleet) elFleet.innerText = totalMachinesFleet;
+      document.getElementById('kpi-utilization-rate').innerText = Math.round((activeMachinesCount / totalMachinesFleet) * 100) + '%';
+      
+      document.getElementById('kpi-armour-screen-tons').innerText = (armourTons + screenTons).toFixed(2);
+      document.getElementById('kpi-armour-tons').innerText = armourTons.toFixed(1);
+      document.getElementById('kpi-screen-tons').innerText = screenTons.toFixed(1);
+
+      document.getElementById('kpi-top-shift').innerText = `${topShift} (${topShiftTon > 0 ? topShiftTon.toFixed(1) + ' طن' : 'لا يوجد'})`;
+      document.getElementById('kpi-top-shift-ton').innerText = topShiftTon.toFixed(1) + ' طن';
+
+      // Update Bar quick counters
+      document.getElementById('bar-active-machines').innerText = `${activeMachinesCount} / ${totalMachinesFleet}`;
+      document.getElementById('bar-total-ton').innerText = `${totalTons.toFixed(2)} طن`;
+      document.getElementById('bar-total-meters').innerText = `${Math.round(totalMeters).toLocaleString()} م`;
+      document.getElementById('tab-records-count').innerText = filteredRecords.length;
+    }
+
+    /* =========================================================================
+       7. CHARTS RENDERING (Chart.js)
+       ========================================================================= */
+    let chartUnitMode = 'km';
+
+    function setChartUnitMode(mode) {
+      chartUnitMode = mode;
+      const btnKm = document.getElementById('btn-unit-km');
+      const btnTon = document.getElementById('btn-unit-ton');
+      if (btnKm && btnTon) {
+        if (mode === 'km') {
+          btnKm.className = "px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-energya-royal text-white shadow-sm";
+          btnTon.className = "px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+        } else {
+          btnTon.className = "px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-energya-royal text-white shadow-sm";
+          btnKm.className = "px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+        }
+      }
+
+      // Update subtitle indicator on chart 1
+      const subEl = document.getElementById('chart-stages-unit-sub');
+      if (subEl) {
+        subEl.innerText = mode === 'km' ? 'بالكيلومتر (كم)' : 'بالوزن (طن)';
+      }
+
+      updateCharts();
+    }
+
+    function updateCharts() {
+      const isKm = (chartUnitMode !== 'ton'); // Default is Kilometers (كم)
+
+      // 1. Stage Chart (by km or ton)
+      const stageLabels = [];
+      const stageValues = [];
+      for (const sId in STAGE_MAP) {
+        const st = stageStats[sId];
+        if (st) {
+          const val = isKm ? (st.totalMeters / 1000) : st.totalTons;
+          if (val > 0) {
+            stageLabels.push(STAGE_MAP[sId].code);
+            stageValues.push(parseFloat(val.toFixed(2)));
+          }
+        }
+      }
+
+      renderChart('chart-stages', {
+        type: 'bar',
+        data: {
+          labels: stageLabels.length > 0 ? stageLabels : ['لا يوجد'],
+          datasets: [{
+            label: isKm ? 'إجمالي الأطوال (كيلومتر - كم)' : 'إجمالي الوزن (طن)',
+            data: stageValues.length > 0 ? stageValues : [0],
+            backgroundColor: '#00529B',
+            borderRadius: 6,
+            barThickness: 16
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `الإنتاج: ${ctx.parsed.y.toLocaleString()} ${isKm ? 'كم' : 'طن'}`
+              }
+            }
+          },
+          scales: {
+            y: { 
+              beginAtZero: true, 
+              grid: { color: '#F1F5F9' },
+              ticks: {
+                callback: (val) => `${val} ${isKm ? 'كم' : 'طن'}`
+              }
+            },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+
+      // 2. Shift Chart (by km or ton)
+      const shiftCounts = { S1: 0, S2: 0, S3: 0, F1: 0, F2: 0 };
+      filteredRecords.forEach(r => {
+        const addVal = isKm ? ((r.LengthMeters || 0) / 1000) : (r.WeightTon || 0);
+        if (shiftCounts[r.ShiftCode] !== undefined) shiftCounts[r.ShiftCode] += addVal;
+      });
+      for (const sh in shiftCounts) {
+        shiftCounts[sh] = parseFloat(shiftCounts[sh].toFixed(2));
+      }
+
+      renderChart('chart-shifts', {
+        type: 'doughnut',
+        data: {
+          labels: ['وردية S1', 'وردية S2', 'وردية S3', 'وردية F1', 'وردية F2'],
+          datasets: [{
+            data: Object.values(shiftCounts),
+            backgroundColor: ['#00529B', '#0077CC', '#00A3E0', '#10B981', '#F59E0B'],
+            borderWidth: 2,
+            borderColor: '#FFFFFF'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} ${isKm ? 'كم' : 'طن'}`
+              }
+            }
+          },
+          cutout: '65%'
+        }
+      });
+
+      // 3. Top 10 Machines (by km or ton)
+      const sortedMachines = Object.values(machineStats)
+        .map(m => ({
+          ...m,
+          chartVal: isKm ? ((m.totalMeters || 0) / 1000) : (m.totalTons || 0)
+        }))
+        .filter(m => m.chartVal > 0)
+        .sort((a, b) => b.chartVal - a.chartVal)
+        .slice(0, 10);
+
+      renderChart('chart-machines', {
+        type: 'bar',
+        data: {
+          labels: sortedMachines.map(m => m.name),
+          datasets: [{
+            label: isKm ? 'إجمالي الطول (كيلومتر - كم)' : 'إجمالي الوزن (طن)',
+            data: sortedMachines.map(m => parseFloat(m.chartVal.toFixed(2))),
+            backgroundColor: '#10B981',
+            borderRadius: 5,
+            barThickness: 12
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `الإنتاج: ${ctx.parsed.x.toLocaleString()} ${isKm ? 'كم' : 'طن'}`,
+                afterLabel: () => 'اضغط لاختيار الماكينة في المشهد 3D'
+              }
+            }
+          },
+          onClick: (evt, elements) => {
+            if (elements.length > 0) {
+              const idx = elements[0].index;
+              const mach = sortedMachines[idx];
+              if (mach && window.selectMachineIn3D) {
+                window.selectMachineIn3D(mach.id);
+              }
+            }
+          },
+          scales: {
+            x: { 
+              beginAtZero: true, 
+              grid: { color: '#F1F5F9' },
+              ticks: {
+                callback: (val) => `${val} ${isKm ? 'كم' : 'طن'}`
+              }
+            },
+            y: { grid: { display: false } }
+          }
+        }
+      });
+
+      // 4. Top Supervisors (by km or ton)
+      const supMap = {};
+      filteredRecords.forEach(r => {
+        const addVal = isKm ? ((r.LengthMeters || 0) / 1000) : (r.WeightTon || 0);
+        supMap[r.SupervisorID] = (supMap[r.SupervisorID] || 0) + addVal;
+      });
+
+      const topSups = Object.entries(supMap)
+        .map(([sid, val]) => [sid, parseFloat(val.toFixed(2))])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+
+      renderChart('chart-supervisors', {
+        type: 'bar',
+        data: {
+          labels: topSups.map(s => {
+            const name = getSupervisorName(parseInt(s[0], 10));
+            return name.split(' ')[0] + ' ' + (name.split(' ')[1] || '');
+          }),
+          datasets: [{
+            label: isKm ? 'إنتاج المشرف (كيلومتر - كم)' : 'إنتاج المشرف (طن)',
+            data: topSups.map(s => s[1]),
+            backgroundColor: '#8B5CF6',
+            borderRadius: 5,
+            barThickness: 14
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `إنتاج: ${ctx.parsed.y.toLocaleString()} ${isKm ? 'كم' : 'طن'}`
+              }
+            }
+          },
+          scales: {
+            y: { 
+              beginAtZero: true, 
+              grid: { color: '#F1F5F9' },
+              ticks: {
+                callback: (val) => `${val} ${isKm ? 'كم' : 'طن'}`
+              }
+            },
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+
+      // 5. Materials Breakdown
+      let copperVal = 0, alumVal = 0, screenVal = 0, armourVal = 0;
+      if (isKm) {
+        filteredRecords.forEach(r => {
+          const km = (r.LengthMeters || 0) / 1000;
+          if (r.ConductorMaterial && r.ConductorMaterial.includes('نحاس')) {
+            copperVal += km;
+          } else {
+            alumVal += km;
+          }
+          if (r.ScreenTon > 0) screenVal += km;
+          if (r.ArmourTon > 0) armourVal += km;
+        });
+      } else {
+        filteredRecords.forEach(r => {
+          copperVal += r.CopperTon || 0;
+          alumVal += r.AluminumTon || 0;
+          screenVal += r.ScreenTon || 0;
+          armourVal += r.ArmourTon || 0;
+        });
+      }
+
+      copperVal = parseFloat(copperVal.toFixed(2));
+      alumVal = parseFloat(alumVal.toFixed(2));
+      screenVal = parseFloat(screenVal.toFixed(2));
+      armourVal = parseFloat(armourVal.toFixed(2));
+
+      renderChart('chart-materials', {
+        type: 'pie',
+        data: {
+          labels: isKm 
+            ? ['كابلات نحاس (كم)', 'كابلات ألومنيوم (كم)', 'كابلات شيلد (كم)', 'كابلات تسليح (كم)']
+            : ['نحاس (Copper طن)', 'ألومنيوم (Aluminum طن)', 'شيلد (Screen طن)', 'تسليح (Armour طن)'],
+          datasets: [{
+            data: [copperVal, alumVal, screenVal, armourVal],
+            backgroundColor: ['#D97706', '#64748B', '#0077CC', '#475569'],
+            borderWidth: 2,
+            borderColor: '#FFFFFF'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} ${isKm ? 'كم' : 'طن'}`
+              }
+            }
+          }
+        }
+      });
+
+      // 6. Wire Sizes
+      const sizeMap = {};
+      filteredRecords.forEach(r => {
+        const key = r.WireSize || 'Other';
+        const addVal = isKm ? ((r.LengthMeters || 0) / 1000) : (r.WeightTon || 0);
+        sizeMap[key] = (sizeMap[key] || 0) + addVal;
+      });
+      const topSizes = Object.entries(sizeMap)
+        .map(([k, v]) => [k, parseFloat(v.toFixed(2))])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 7);
+
+      renderChart('chart-wiresizes', {
+        type: 'bar',
+        data: {
+          labels: topSizes.map(s => s[0]),
+          datasets: [{
+            label: isKm ? 'إجمالي الأطوال (كيلومتر - كم)' : 'إجمالي الوزن (طن)',
+            data: topSizes.map(s => s[1]),
+            backgroundColor: '#E11D48',
+            borderRadius: 5,
+            barThickness: 14
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `الطول: ${ctx.parsed.y.toLocaleString()} ${isKm ? 'كم' : 'طن'}`
+              }
+            }
+          },
+          scales: {
+            y: { 
+              beginAtZero: true, 
+              grid: { color: '#F1F5F9' },
+              ticks: {
+                callback: (val) => `${val} ${isKm ? 'كم' : 'طن'}`
+              }
+            },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderChart(canvasId, config) {
+      if (charts[canvasId]) {
+        charts[canvasId].destroy();
+      }
+      const ctx = document.getElementById(canvasId);
+      if (ctx) {
+        charts[canvasId] = new Chart(ctx, config);
+      }
+    }
+
+    /* =========================================================================
+       8. PRODUCTION DATA TABLE & PAGINATION
+       ========================================================================= */
+    function updateTable() {
+      const tbody = document.getElementById('table-body');
+      document.getElementById('table-total-count').innerText = filteredRecords.length;
+
+      const totalPages = Math.ceil(filteredRecords.length / tablePageSize) || 1;
+      if (tableCurrentPage > totalPages) tableCurrentPage = totalPages;
+      if (tableCurrentPage < 1) tableCurrentPage = 1;
+
+      document.getElementById('pagination-current').innerText = tableCurrentPage;
+      document.getElementById('pagination-total').innerText = totalPages;
+      document.getElementById('btn-prev-page').disabled = tableCurrentPage <= 1;
+      document.getElementById('btn-next-page').disabled = tableCurrentPage >= totalPages;
+
+      const startIdx = (tableCurrentPage - 1) * tablePageSize;
+      const pageData = filteredRecords.slice(startIdx, startIdx + tablePageSize);
+
+      if (pageData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-400 font-bold">لا توجد سجلات تطابق الفلاتر المحددة</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = pageData.map(r => {
+        const matColor = r.ConductorMaterial && r.ConductorMaterial.includes('نحاس') ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-slate-700 bg-slate-100 border-slate-200';
+        return `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="p-3 font-mono font-bold text-energya-royal">${r.OrderID}</td>
+            <td class="p-3 text-[11px]">${r.RegDate} <span class="bg-blue-100 text-energya-navy px-1.5 py-0.5 rounded font-bold">${r.ShiftCode}</span></td>
+            <td class="p-3 font-semibold">${getStageName(r.StageID)}</td>
+            <td class="p-3">
+              <button onclick="selectMachineIn3D(${r.MachineID})" class="font-bold text-energya-royal hover:underline flex items-center gap-1">
+                <i class="fa-solid fa-cube text-[10px]"></i> ${getMachineName(r.MachineID)}
+              </button>
+            </td>
+            <td class="p-3 text-slate-600 font-medium">${getSupervisorName(r.SupervisorID)}</td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold border ${matColor}">${r.ConductorMaterial}</span>
+              <div class="text-[11px] text-slate-800 font-mono mt-0.5 font-bold">${r.WireSize}</div>
+              <div class="text-[10px] text-slate-400 truncate max-w-[120px]">${r.WireType}</div>
+            </td>
+            <!-- Send Data: SendCardNo & PayOffNo -->
+            <td class="p-3 bg-blue-50/40 border-x border-blue-100">
+              <div class="flex items-center justify-between gap-1 text-[11px]">
+                <span class="text-slate-400 text-[10px]">كارت الإرسال:</span>
+                ${r.SendCardNo === 'without' 
+                  ? '<span class="font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] italic font-semibold">without</span>' 
+                  : `<span class="font-mono font-bold text-blue-800 bg-blue-100 px-1.5 py-0.5 rounded text-[11px]">${r.SendCardNo}</span>`}
+              </div>
+              <div class="flex items-center justify-between gap-1 text-[11px] mt-1">
+                <span class="text-slate-400 text-[10px]">بكرة الإرسال:</span>
+                ${r.PayOffNo === 'without' 
+                  ? '<span class="font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] italic font-semibold">without</span>' 
+                  : `<span class="font-mono font-bold text-slate-800 bg-white border border-slate-200 px-1.5 py-0.5 rounded text-[11px]">${r.PayOffNo}</span>`}
+              </div>
+            </td>
+            <!-- Receive Data: ReceiveCardNo & TakeUpNo -->
+            <td class="p-3 bg-emerald-50/40 border-x border-emerald-100">
+              <div class="flex items-center justify-between gap-1 text-[11px]">
+                <span class="text-slate-400 text-[10px]">كارت الاستقبال:</span>
+                ${r.ReceiveCardNo === 'without' 
+                  ? '<span class="font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] italic font-semibold">without</span>' 
+                  : `<span class="font-mono font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded text-[11px]">${r.ReceiveCardNo}</span>`}
+              </div>
+              <div class="flex items-center justify-between gap-1 text-[11px] mt-1">
+                <span class="text-slate-400 text-[10px]">بكرة الاستقبال:</span>
+                ${r.TakeUpNo === 'without' 
+                  ? '<span class="font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] italic font-semibold">without</span>' 
+                  : `<span class="font-mono font-extrabold text-emerald-900 bg-emerald-200/80 px-1.5 py-0.5 rounded text-[11px] shadow-sm">${r.TakeUpNo}</span>`}
+              </div>
+            </td>
+            <td class="p-3">
+              <div class="font-mono font-bold text-energya-blue text-xs">${Math.round(r.LengthMeters).toLocaleString()} م</div>
+              ${r.InputLengths > 0 ? `<div class="text-[10px] text-slate-400 font-mono">تغذية: ${Math.round(r.InputLengths).toLocaleString()} م</div>` : ''}
+            </td>
+            <td class="p-3 font-mono font-extrabold text-slate-900">${r.WeightTon.toFixed(2)}</td>
+            <td class="p-3 text-[11px] text-slate-500">${r.CopperTon.toFixed(2)} / ${r.AluminumTon.toFixed(2)}</td>
+            <td class="p-3 text-[10px] text-slate-500 truncate max-w-[140px]" title="${r.Remark}">${r.Remark}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function prevPage() {
+      if (tableCurrentPage > 1) {
+        tableCurrentPage--;
+        updateTable();
+      }
+    }
+    function nextPage() {
+      const totalPages = Math.ceil(filteredRecords.length / tablePageSize) || 1;
+      if (tableCurrentPage < totalPages) {
+        tableCurrentPage++;
+        updateTable();
+      }
+    }
+    function changePageLimit(newLimit) {
+      tablePageSize = parseInt(newLimit);
+      tableCurrentPage = 1;
+      updateTable();
+    }
+
+    /* =========================================================================
+       9. EXPORT DECODED CSV
+       ========================================================================= */
+    function exportDecodedCSV() {
+      if (filteredRecords.length === 0) {
+        showToast('لا توجد بيانات لتصديرها', 'error');
+        return;
+      }
+
+      const rows = filteredRecords.map(r => ({
+        "WorkOrder": r.OrderID,
+        "تاريخ_التسجيل_RegDate": r.RegDate,
+        "الوردية_ShiftCode": r.ShiftCode,
+        "كود_OPERATION_المرحلة": r.StageID,
+        "OPERATION_المرحلة": getStageName(r.StageID),
+        "كود_الماكينة_الرقمي": r.MachineID,
+        "اسم_الماكينة": getMachineName(r.MachineID),
+        "كود_المشغل_المشرف": r.SupervisorID,
+        "المشغل_المشرف": getSupervisorName(r.SupervisorID),
+        "خامة_الموصل": r.ConductorMaterial,
+        "نوع_السلك": r.WireType,
+        "عدد_القلوب": r.CoreCount,
+        "المقاس": r.WireSize,
+        "كارت_الإرسال_SendCardNo": r.SendCardNo,
+        "بكرة_الإرسال_PayOffNo": r.PayOffNo,
+        "طول_الدخول_بالمتر_InputLengths": r.InputLengths,
+        "كارت_الاستقبال_ReceiveCardNo": r.ReceiveCardNo,
+        "بكرة_الاستقبال_TakeUpNo": r.TakeUpNo,
+        "طول_الإنتاج_بالمتر_LengthMeters": r.LengthMeters,
+        "الوزن_الإجمالي_طن": r.WeightTon,
+        "وزن_النحاس_طن": r.CopperTon,
+        "وزن_الألومنيوم_طن": r.AluminumTon,
+        "وزن_الشيلد_طن": r.ScreenTon,
+        "وزن_التسليح_طن": r.ArmourTon,
+        "الملاحظات": r.Remark
+      }));
+
+      const csv = Papa.unparse(rows);
+      const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Energya_Cables_Decoded_Production_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('تم تصدير ملف CSV مع الأسماء المفككة بنجاح!', 'success');
+    }
+
+    /* =========================================================================
+       9.1 WIP DATA LEDGER & TRACEABILITY ENGINE (Pure Data - No KPIs)
+       ========================================================================= */
+    function calculateWIPLedger() {
+      wipLedger = [];
+
+      // 1. Group raw production records into unified physical WIP items.
+      // In cable manufacturing, a physical reel lot in a stage is uniquely identified by:
+      // (WorkOrder + StageID + NormalizedCard + (NormalizedReel if valid) + WireSize)
+      // This automatically merges multi-shift runs (e.g. 10,620m in Shift 1 + 4,070m in Shift 2)
+      // and unifies naming variants like 'G-90' and 'G90' via normalizeCode().
+      const producedGroups = [];
+      const groupMap = new Map();
+
+      rawRecords.forEach((r, idx) => {
+        const orderId = r.OrderID || 'UNKNOWN';
+        const stageId = r.StageID;
+        const normCard = normalizeCode(r.ReceiveCardNo);
+        const normReel = normalizeCode(r.TakeUpNo);
+        const wireSize = r.WireSize || '16';
+
+        let groupKey;
+        if (normCard !== 'without') {
+          // If Card is known: Card is the primary lot identifier on the shopfloor.
+          // If a distinct physical reel is also specified, attach it so two different drums on the same card don't collide.
+          const reelPart = normReel !== 'without' ? `__R_${normReel}` : '';
+          groupKey = `${orderId}__S_${stageId}__C_${normCard}__W_${wireSize}${reelPart}`;
+        } else if (normReel !== 'without') {
+          // No Card, but Reel is known
+          groupKey = `${orderId}__S_${stageId}__R_${normReel}__W_${wireSize}`;
+        } else {
+          // Neither Card nor Reel known: unique per row
+          groupKey = `ROW_${idx}`;
+        }
+
+        if (!groupMap.has(groupKey)) {
+          const newGrp = {
+            key: groupKey,
+            orderId: orderId,
+            stageId: stageId,
+            stageName: getStageName(stageId),
+            wireSize: wireSize,
+            conductor: r.ConductorMaterial || '',
+            normCard: normCard,
+            normReel: normReel,
+            takeUpNo: r.TakeUpNo,
+            receiveCardNo: r.ReceiveCardNo,
+            sourcePayOff: r.PayOffNo,
+            sourceSendCard: r.SendCardNo,
+            originalLength: 0,
+            records: [],
+            recordIndices: [],
+            machineNames: [],
+            shiftCodes: [],
+            supervisors: [],
+            regDates: []
+          };
+          groupMap.set(groupKey, newGrp);
+          producedGroups.push(newGrp);
+        }
+
+        const grp = groupMap.get(groupKey);
+        grp.originalLength += (r.LengthMeters || 0);
+        grp.records.push(r);
+        grp.recordIndices.push(idx);
+
+        const machName = getMachineName(r.MachineID);
+        if (!grp.machineNames.includes(machName)) grp.machineNames.push(machName);
+        if (!grp.shiftCodes.includes(r.ShiftCode)) grp.shiftCodes.push(r.ShiftCode);
+        const supName = getSupervisorName(r.SupervisorID);
+        if (!grp.supervisors.includes(supName)) grp.supervisors.push(supName);
+        if (!grp.regDates.includes(r.RegDate)) grp.regDates.push(r.RegDate);
+
+        // Preserve best display names (prefer hyphenated reel name like 'G-90' over 'G90')
+        if (r.TakeUpNo !== 'without') {
+          if (grp.takeUpNo === 'without' || (r.TakeUpNo.includes('-') && !grp.takeUpNo.includes('-'))) {
+            grp.takeUpNo = r.TakeUpNo;
+          }
+        }
+        if (r.ReceiveCardNo !== 'without' && grp.receiveCardNo === 'without') {
+          grp.receiveCardNo = r.ReceiveCardNo;
+        }
+        if (r.PayOffNo !== 'without' && grp.sourcePayOff === 'without') {
+          grp.sourcePayOff = r.PayOffNo;
+        }
+        if (r.SendCardNo !== 'without' && grp.sourceSendCard === 'without') {
+          grp.sourceSendCard = r.SendCardNo;
+        }
+      });
+
+      // 2. Pre-index raw records by order for strict within-order downstream lookups
+      const recordsByOrder = {};
+      rawRecords.forEach((rec, idx) => {
+        const order = rec.OrderID || 'UNKNOWN';
+        if (!recordsByOrder[order]) recordsByOrder[order] = [];
+        recordsByOrder[order].push({ rec, idx });
+      });
+
+      // 3. Pre-index raw records for cross-order transfers using normalized keys
+      const crossOrderMap = {};
+      rawRecords.forEach((rec, idx) => {
+        const pReel = normalizeCode(rec.PayOffNo);
+        const sCard = normalizeCode(rec.SendCardNo);
+
+        if (pReel !== 'without' && sCard !== 'without') {
+          const bothKey = `${pReel}__${sCard}`;
+          if (!crossOrderMap[bothKey]) crossOrderMap[bothKey] = [];
+          crossOrderMap[bothKey].push({ rec, idx });
+        }
+        if (sCard !== 'without') {
+          const cardKey = `CARD__${sCard}`;
+          if (!crossOrderMap[cardKey]) crossOrderMap[cardKey] = [];
+          crossOrderMap[cardKey].push({ rec, idx });
+        }
+      });
+
+      // 4. Track consumption for each physical produced reel group
+      producedGroups.forEach(grp => {
+        let matchedConsumers = [];
+        let seenIndices = new Set();
+        const maxSelfIdx = Math.max(...grp.recordIndices);
+
+        // A. Check within the same WorkOrder:
+        const orderCandidates = recordsByOrder[grp.orderId] || [];
+        orderCandidates.forEach(({ rec: c, idx: cIdx }) => {
+          if (grp.recordIndices.includes(cIdx)) return; // don't match self
+
+          // Strict forward stage sequence: consumer stage MUST be strictly downstream
+          if (c.StageID <= grp.stageId) return;
+
+          const cPayOff = normalizeCode(c.PayOffNo);
+          const cSendCard = normalizeCode(c.SendCardNo);
+
+          let isMatch = false;
+          // Priority 1: Match by normalized PayOffNo
+          if (grp.normReel !== 'without' && cPayOff !== 'without') {
+            if (cPayOff === grp.normReel) isMatch = true;
+          }
+          // Priority 2: Match by normalized SendCardNo
+          else if (grp.normCard !== 'without' && cSendCard !== 'without') {
+            if (cSendCard === grp.normCard) isMatch = true;
+          }
+
+          if (isMatch && !seenIndices.has(cIdx)) {
+            seenIndices.add(cIdx);
+            const consumedLen = (c.InputLengths && c.InputLengths > 0) ? c.InputLengths : (c.LengthMeters || 0);
+            matchedConsumers.push({
+              record: c,
+              consumed: consumedLen,
+              stage: getStageEnglishName(c.StageID),
+              stageId: c.StageID,
+              idx: cIdx
+            });
+          }
+        });
+
+        // B. If no consumers found in same WorkOrder, check cross-order transfer:
+        // Note: Reusable spools/drums (e.g. L-36, G-90) circulate factory-wide across unrelated orders.
+        // Material transfer between orders MUST be verified by Job Card (SendCardNo === ReceiveCardNo) or Both.
+        if (matchedConsumers.length === 0) {
+          let crossCandidates = [];
+          // Priority 1: Match BOTH Reel & Card
+          if (grp.normReel !== 'without' && grp.normCard !== 'without') {
+            crossCandidates = crossOrderMap[`${grp.normReel}__${grp.normCard}`] || [];
+          }
+          // Priority 2: Match by Card (Job Card issuance across shopfloor orders)
+          if (crossCandidates.length === 0 && grp.normCard !== 'without') {
+            crossCandidates = crossOrderMap[`CARD__${grp.normCard}`] || [];
+          }
+
+          crossCandidates.forEach(({ rec: c, idx: cIdx }) => {
+            if (c.OrderID !== grp.orderId && !seenIndices.has(cIdx)) {
+              // Strict forward stage sequence: consumer stage MUST be strictly downstream
+              if (c.StageID <= grp.stageId) return;
+
+              seenIndices.add(cIdx);
+              const consumedLen = (c.InputLengths && c.InputLengths > 0) ? c.InputLengths : (c.LengthMeters || 0);
+              matchedConsumers.push({
+                record: c,
+                consumed: consumedLen,
+                stage: `${getStageEnglishName(c.StageID)} [WO: ${c.OrderID}]`,
+                stageId: c.StageID,
+                idx: cIdx
+              });
+            }
+          });
+        }
+
+        // C. Isolate DIRECT NEXT OPERATION only:
+        if (matchedConsumers.length > 0) {
+          matchedConsumers.sort((a, b) => a.stageId - b.stageId);
+          const directStageId = matchedConsumers[0].stageId;
+          matchedConsumers = matchedConsumers.filter(c => c.stageId === directStageId);
+        }
+
+        // D. Calculate Consumed and Remaining
+        const rawConsumed = matchedConsumers.reduce((sum, c) => sum + c.consumed, 0);
+        const totalConsumed = rawConsumed; // Show true recorded consumed meters
+        const remaining = Math.max(0, grp.originalLength - rawConsumed); // Remaining balance cannot drop below 0
+
+        // Identify consuming stages (English only, no Arabic)
+        const consumingStages = matchedConsumers.length > 0
+          ? Array.from(new Set(matchedConsumers.map(c => c.stage))).join(', ')
+          : 'Not Drawn Yet';
+
+        // Next expected stage in production flow
+        const currentStageName = grp.stageName;
+        const nextStageObj = STAGE_MAP[grp.stageId + 1];
+        const nextStageName = nextStageObj ? getStageEnglishName(grp.stageId + 1) : 'Next Stage';
+
+        // Source description
+        let sourceDesc = '';
+        if (grp.sourcePayOff !== 'without' && grp.sourceSendCard !== 'without') {
+          sourceDesc = `بكرة: ${grp.sourcePayOff} (كارت: ${grp.sourceSendCard})`;
+        } else if (grp.sourcePayOff !== 'without') {
+          sourceDesc = `بكرة: ${grp.sourcePayOff}`;
+        } else if (grp.sourceSendCard !== 'without') {
+          sourceDesc = `كارت: ${grp.sourceSendCard}`;
+        } else {
+          sourceDesc = 'خامة أولية / بدون بكرة سابقة';
+        }
+
+        // Status Determination
+        let statusCode = 'READY';
+        let statusText = '';
+        let statusBadgeClass = '';
+
+        if (grp.originalLength <= 0) {
+          statusCode = 'FULL';
+          statusText = '0 م (بدون أطوال مسجلة)';
+          statusBadgeClass = 'bg-slate-100 text-slate-600 border-slate-200 font-semibold';
+        } else if (remaining <= 0 || rawConsumed >= grp.originalLength) {
+          statusCode = 'FULL';
+          statusText = '🟢 مستهلكة بالكامل (رصيد 0 م)';
+          statusBadgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200 font-bold';
+        } else if (totalConsumed > 0 && remaining > 0) {
+          statusCode = 'PARTIAL';
+          statusText = `🟡 متبقي ${Math.round(remaining).toLocaleString()} م - جاهزة لمرحلة: ${nextStageName}`;
+          statusBadgeClass = 'bg-amber-50 text-amber-900 border-amber-300 font-bold';
+        } else {
+          statusCode = 'READY';
+          statusText = `🔵 جاهزة بنسبة 100% (${Math.round(grp.originalLength).toLocaleString()} م) - لم تُسحب بعد`;
+          statusBadgeClass = 'bg-blue-50 text-blue-900 border-blue-200 font-bold';
+        }
+
+        wipLedger.push({
+          workOrder: grp.orderId,
+          regDate: grp.regDates.join(' ، '),
+          shiftCode: grp.shiftCodes.join(' + '),
+          machineName: grp.machineNames.join('، '),
+          supervisorName: grp.supervisors.join('، '),
+          stageId: grp.stageId,
+          stageName: currentStageName,
+          wireSize: grp.wireSize,
+          takeUpNo: grp.takeUpNo,
+          receiveCardNo: grp.receiveCardNo,
+          sourceDesc: sourceDesc,
+          sourcePayOff: grp.sourcePayOff,
+          sourceSendCard: grp.sourceSendCard,
+          consumingStages: consumingStages,
+          originalLength: grp.originalLength,
+          totalConsumed: totalConsumed,
+          remainingLength: remaining,
+          statusCode: statusCode,
+          statusText: statusText,
+          statusBadgeClass: statusBadgeClass,
+          mergedCount: grp.records.length,
+          rawRecord: grp.records[0]
+        });
+      });
+
+      // Update Header & Tab Badges
+      const tabWipBadge = document.getElementById('tab-wip-count');
+      if (tabWipBadge) tabWipBadge.innerText = wipLedger.length;
+      const wipBadge = document.getElementById('wip-tab-badge');
+      if (wipBadge) wipBadge.innerText = wipLedger.length;
+
+      applyWIPFilters();
+    }
+
+    function applyWIPFilters() {
+      const statusFilterEl = document.getElementById('wip-status-filter');
+      const statusFilter = statusFilterEl ? statusFilterEl.value : 'ALL';
+      const searchEl = document.getElementById('wip-search-input');
+      const search = searchEl ? searchEl.value.trim().toLowerCase() : '';
+      const normSearch = search ? normalizeCode(search) : '';
+
+      filteredWIP = wipLedger.filter(item => {
+        if (statusFilter !== 'ALL' && item.statusCode !== statusFilter) return false;
+        if (search) {
+          const matchWO = item.workOrder.toLowerCase().includes(search);
+          const matchTakeUp = item.takeUpNo.toLowerCase().includes(search) || (normSearch !== 'without' && normalizeCode(item.takeUpNo).includes(normSearch));
+          const matchRecCard = item.receiveCardNo.toLowerCase().includes(search) || (normSearch !== 'without' && normalizeCode(item.receiveCardNo).includes(normSearch));
+          const matchPayOff = item.sourcePayOff.toLowerCase().includes(search) || (normSearch !== 'without' && normalizeCode(item.sourcePayOff).includes(normSearch));
+          const matchSendCard = item.sourceSendCard.toLowerCase().includes(search) || (normSearch !== 'without' && normalizeCode(item.sourceSendCard).includes(normSearch));
+          const matchStage = item.stageName.toLowerCase().includes(search);
+          const matchMach = item.machineName.toLowerCase().includes(search);
+          const matchSup = item.supervisorName.toLowerCase().includes(search);
+          const matchSize = item.wireSize && item.wireSize.toLowerCase().includes(search);
+          if (!matchWO && !matchTakeUp && !matchRecCard && !matchPayOff && !matchSendCard && !matchStage && !matchMach && !matchSup && !matchSize) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      wipCurrentPage = 1;
+      updateWIPTable();
+    }
+
+    function updateWIPTable() {
+      const tbody = document.getElementById('wip-table-body');
+      if (!tbody) return;
+
+      const totalCountEl = document.getElementById('wip-total-count');
+      if (totalCountEl) totalCountEl.innerText = filteredWIP.length;
+
+      const totalPages = Math.ceil(filteredWIP.length / wipPageSize) || 1;
+      if (wipCurrentPage > totalPages) wipCurrentPage = totalPages;
+      if (wipCurrentPage < 1) wipCurrentPage = 1;
+
+      const pageCurEl = document.getElementById('wip-pagination-current');
+      const pageTotEl = document.getElementById('wip-pagination-total');
+      if (pageCurEl) pageCurEl.innerText = wipCurrentPage;
+      if (pageTotEl) pageTotEl.innerText = totalPages;
+
+      const prevBtn = document.getElementById('btn-wip-prev-page');
+      const nextBtn = document.getElementById('btn-wip-next-page');
+      if (prevBtn) prevBtn.disabled = wipCurrentPage <= 1;
+      if (nextBtn) nextBtn.disabled = wipCurrentPage >= totalPages;
+
+      const startIdx = (wipCurrentPage - 1) * wipPageSize;
+      const pageData = filteredWIP.slice(startIdx, startIdx + wipPageSize);
+
+      if (pageData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-slate-400 font-bold">لا توجد بكرات مطابقة للبحث أو الفلتر المحدد</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = pageData.map(item => {
+        return `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="p-3 font-mono font-bold text-energya-royal">${item.workOrder}</td>
+            <!-- 1. Source: Send Reel & Send Card -->
+            <td class="p-3 bg-blue-50/40 border-x border-blue-100">
+              <div class="flex items-center justify-between gap-1 text-[11px]">
+                <span class="text-slate-400 text-[10px]">بكرة الإرسال:</span>
+                ${item.sourcePayOff === 'without' 
+                  ? '<span class="font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] italic font-semibold">without</span>' 
+                  : `<span class="font-mono font-bold text-slate-800 bg-white border border-slate-200 px-1.5 py-0.5 rounded text-[11px]">${item.sourcePayOff}</span>`}
+              </div>
+              <div class="flex items-center justify-between gap-1 text-[11px] mt-1">
+                <span class="text-slate-400 text-[10px]">كارت الإرسال:</span>
+                ${item.sourceSendCard === 'without' 
+                  ? '<span class="font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] italic font-semibold">without</span>' 
+                  : `<span class="font-mono font-bold text-blue-800 bg-blue-100 px-1.5 py-0.5 rounded text-[11px]">${item.sourceSendCard}</span>`}
+              </div>
+            </td>
+            <!-- 2. Output: Receive Reel & Receive Card -->
+            <td class="p-3 bg-emerald-50/40 border-x border-emerald-100">
+              <div class="flex items-center justify-between gap-1 text-[11px]">
+                <span class="text-slate-400 text-[10px]">بكرة الاستقبال:</span>
+                ${item.takeUpNo === 'without' 
+                  ? '<span class="font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] italic font-semibold">without</span>' 
+                  : `<span class="font-mono font-black text-emerald-900 bg-emerald-200/80 px-1.5 py-0.5 rounded text-[11px]">${item.takeUpNo}</span>`}
+              </div>
+              <div class="flex items-center justify-between gap-1 text-[11px] mt-1">
+                <span class="text-slate-400 text-[10px]">كارت الاستقبال:</span>
+                ${item.receiveCardNo === 'without' 
+                  ? '<span class="font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[11px] italic font-semibold">without</span>' 
+                  : `<span class="font-mono font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded text-[11px]">${item.receiveCardNo}</span>`}
+              </div>
+            </td>
+            <!-- 3. Wire Size -->
+            <td class="p-3 text-center">
+              <span class="font-mono font-black text-slate-900 bg-slate-100 border border-slate-200 px-2 py-1 rounded text-xs inline-block shadow-sm">
+                ${item.wireSize || '-'}
+              </span>
+            </td>
+            <!-- 4. Producing Operation -->
+            <td class="p-3 font-semibold text-slate-800">${item.stageName}</td>
+            <td class="p-3 text-slate-600 font-medium">${item.consumingStages}</td>
+            <td class="p-3 font-mono font-bold text-slate-700 text-left">${Math.round(item.originalLength).toLocaleString()} م</td>
+            <td class="p-3 font-mono font-bold text-rose-700 text-left">${Math.round(item.totalConsumed).toLocaleString()} م</td>
+            <td class="p-3 font-mono font-black text-left ${item.remainingLength > 0 ? 'text-emerald-700 text-sm' : 'text-slate-400'}">
+              ${Math.round(item.remainingLength).toLocaleString()} م
+            </td>
+            <td class="p-3">
+              <span class="px-2.5 py-1 rounded-lg border text-xs inline-block ${item.statusBadgeClass}">
+                ${item.statusText}
+              </span>
+            </td>
+            <td class="p-3 text-[11px] text-slate-600">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-bold text-energya-royal">${item.machineName}</span>
+                <span class="bg-blue-100 text-energya-navy px-1.5 py-0.5 rounded font-mono font-bold text-[10px]">${item.shiftCode}</span>
+                ${item.mergedCount > 1 ? `<span class="bg-amber-100 text-amber-800 px-1 py-0.5 rounded text-[9px] font-bold" title="مجمعة من ${item.mergedCount} تسجيلات ورديات">${item.mergedCount} ورديات</span>` : ''}
+              </div>
+              <div class="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5" title="${item.supervisorName}">${item.supervisorName}</div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function prevWIPPage() {
+      if (wipCurrentPage > 1) {
+        wipCurrentPage--;
+        updateWIPTable();
+      }
+    }
+
+    function nextWIPPage() {
+      const totalPages = Math.ceil(filteredWIP.length / wipPageSize) || 1;
+      if (wipCurrentPage < totalPages) {
+        wipCurrentPage++;
+        updateWIPTable();
+      }
+    }
+
+    function changeWIPPageLimit(newLimit) {
+      wipPageSize = parseInt(newLimit);
+      wipCurrentPage = 1;
+      updateWIPTable();
+    }
+
+    function switchTableSubTab(subTab) {
+      currentTableSubTab = subTab;
+      const btnProd = document.getElementById('subtab-btn-production');
+      const btnWip = document.getElementById('subtab-btn-wip');
+      const viewProd = document.getElementById('view-production-table');
+      const viewWip = document.getElementById('view-wip-table');
+      const toolsProd = document.getElementById('toolbar-production-actions');
+      const toolsWip = document.getElementById('toolbar-wip-actions');
+
+      if (subTab === 'production') {
+        btnProd.className = "px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 bg-energya-royal text-white shadow-sm";
+        btnWip.className = "px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 bg-white text-slate-700 hover:text-energya-royal hover:bg-slate-100 border border-slate-200";
+        viewProd.classList.remove('hidden');
+        viewWip.classList.add('hidden');
+        toolsProd.classList.remove('hidden');
+        toolsWip.classList.add('hidden');
+      } else {
+        btnWip.className = "px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 bg-energya-royal text-white shadow-sm";
+        btnProd.className = "px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 bg-white text-slate-700 hover:text-energya-royal hover:bg-slate-100 border border-slate-200";
+        viewProd.classList.add('hidden');
+        viewWip.classList.remove('hidden');
+        toolsProd.classList.add('hidden');
+        toolsWip.classList.remove('hidden');
+        updateWIPTable();
+      }
+    }
+
+    function exportWIPCSV() {
+      if (filteredWIP.length === 0) {
+        showToast('لا توجد بيانات WIP لتصديرها', 'error');
+        return;
+      }
+
+      const rows = filteredWIP.map(item => ({
+        "WorkOrder": item.workOrder,
+        "بكرة_الإرسال_PayOffNo": item.sourcePayOff,
+        "كارت_الإرسال_SendCardNo": item.sourceSendCard,
+        "بكرة_الاستقبال_TakeUpNo": item.takeUpNo,
+        "كارت_الاستقبال_ReceiveCardNo": item.receiveCardNo,
+        "OPERATION_المرحلة_المُنتِجة": item.stageName,
+        "المقاس": item.wireSize,
+        "المرحلة_اللاحقة_المستهلكة": item.consumingStages,
+        "الطول_الأصلي_متر": item.originalLength,
+        "الطول_المستهلك_متر": item.totalConsumed,
+        "الطول_المتبقي_متر": item.remainingLength,
+        "حالة_البكرة_والجاهزية": item.statusText.replace(/[🟢🟡🔵]/g, '').trim(),
+        "الماكينة": item.machineName,
+        "المشغل_المشرف": item.supervisorName,
+        "الوردية": item.shiftCode,
+        "تاريخ_التسجيل": item.regDate
+      }));
+
+      const csv = Papa.unparse(rows);
+      const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Energya_WIP_Reel_Ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('تم تصدير سجل أرصدة الـ WIP بنجاح!', 'success');
+    }
+
+    /* =========================================================================
+       10. THREE.JS 3D FACTORY DIGITAL TWIN
+       ========================================================================= */
+    function init3DScene() {
+      const container = document.getElementById('canvas-container');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // 1. Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xF0F4F8);
+      scene.fog = new THREE.FogExp2(0xF0F4F8, 0.0035);
+
+      // 2. Camera
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.5, 1000);
+      camera.position.set(0, 95, 150);
+
+      // 3. Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // 4. OrbitControls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2.05; // don't go below floor
+      controls.minDistance = 10;
+      controls.maxDistance = 280;
+      controls.target.set(0, 0, 0);
+
+      // 5. Lighting (Studio Bright Factory Lighting)
+      const ambientLight = new THREE.AmbientLight(0xE8F0FE, 0.85);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.7);
+      dirLight.position.set(60, 120, 80);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 2048;
+      dirLight.shadow.mapSize.height = 2048;
+      dirLight.shadow.camera.near = 10;
+      dirLight.shadow.camera.far = 300;
+      dirLight.shadow.camera.left = -150;
+      dirLight.shadow.camera.right = 150;
+      dirLight.shadow.camera.top = 150;
+      dirLight.shadow.camera.bottom = -150;
+      scene.add(dirLight);
+
+      const blueSpot = new THREE.SpotLight(0x0077CC, 0.4, 200, Math.PI / 4, 0.5);
+      blueSpot.position.set(-60, 80, 0);
+      scene.add(blueSpot);
+
+      // 6. Build Factory Environment
+      buildFactoryEnvironment();
+
+      // 7. Place All 83 Machines
+      layoutAllMachines();
+
+      // 8. Raycaster & Interactivity
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      container.addEventListener('mousemove', onMouseMove);
+      container.addEventListener('click', onMouseClick);
+      window.addEventListener('resize', onWindowResize);
+
+      // 9. Start Animation Loop
+      animate3D();
+    }
+
+    function buildFactoryEnvironment() {
+      // Factory Floor (High gloss epoxy light gray)
+      const floorGeo = new THREE.PlaneGeometry(300, 220);
+      const floorMat = new THREE.MeshStandardMaterial({
+        color: 0xF1F5F9,
+        roughness: 0.35,
+        metalness: 0.15
+      });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      // Grid helper
+      const grid = new THREE.GridHelper(300, 60, 0x00529B, 0xCBD5E1);
+      grid.position.y = 0.05;
+      scene.add(grid);
+
+      // Yellow Pedestrian Safety Lanes
+      createSafetyWalkways();
+
+      // Bay Floor Zones & Signage
+      createBayDemarcations();
+
+      // Factory Wall with Energya Branding
+      createFactoryBackdrop();
+
+      // Selection Highlight Ring
+      const ringGeo = new THREE.RingGeometry(3.5, 4.2, 32);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x00A3E0, side: THREE.DoubleSide });
+      highlightRing = new THREE.Mesh(ringGeo, ringMat);
+      highlightRing.rotation.x = -Math.PI / 2;
+      highlightRing.position.set(0, 0.1, 0);
+      highlightRing.visible = false;
+      scene.add(highlightRing);
+    }
+
+    function createSafetyWalkways() {
+      // Main central walkway
+      const walkwayGeo = new THREE.PlaneGeometry(12, 220);
+      const walkwayMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.6 });
+      const walkway = new THREE.Mesh(walkwayGeo, walkwayMat);
+      walkway.rotation.x = -Math.PI / 2;
+      walkway.position.set(0, 0.08, 0);
+      scene.add(walkway);
+
+      // Yellow stripes along edges
+      for (let x of [-6, 6]) {
+        const stripeGeo = new THREE.PlaneGeometry(0.8, 220);
+        const stripeMat = new THREE.MeshBasicMaterial({ color: 0xF59E0B });
+        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+        stripe.rotation.x = -Math.PI / 2;
+        stripe.position.set(x, 0.09, 0);
+        scene.add(stripe);
+      }
+    }
+
+    function createBayDemarcations() {
+      const bays = [
+        { name: "صالة 1: السحب وتجميع الحزم (Drawing & Bunching)", x: -105, z: 0 },
+        { name: "صالة 2: التجديل وتجميع القلوب (Stranding & Cabling)", x: -50, z: 0 },
+        { name: "صالة 3: أبراج CCV وخطوط العزل (Insulation & CCV)", x: 25, z: 0 },
+        { name: "صالة 4: التدريع والتسليح (Screening & Armouring)", x: 80, z: 0 },
+        { name: "صالة 5: التعبئة وإعادة اللف (Coiling & Rewind)", x: 125, z: 0 }
+      ];
+
+      bays.forEach((bay, idx) => {
+        // Floor zone boundary lines
+        const lineGeo = new THREE.PlaneGeometry(0.4, 180);
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0x0077CC, transparent: true, opacity: 0.3 });
+        const line = new THREE.Mesh(lineGeo, lineMat);
+        line.rotation.x = -Math.PI / 2;
+        line.position.set(bay.x + 24, 0.06, 0);
+        scene.add(line);
+      });
+    }
+
+    function createFactoryBackdrop() {
+      // Rear wall with windows and Energya logo plate
+      const wallGeo = new THREE.BoxGeometry(300, 30, 2);
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x242D38, roughness: 0.7 });
+      const wall = new THREE.Mesh(wallGeo, wallMat);
+      wall.position.set(0, 15, -110);
+      scene.add(wall);
+
+      // Steel roof trusses
+      for (let x = -140; x <= 140; x += 35) {
+        const trussGeo = new THREE.BoxGeometry(1.5, 3, 220);
+        const trussMat = new THREE.MeshStandardMaterial({ color: 0x00529B, metalness: 0.8, roughness: 0.3 });
+        const truss = new THREE.Mesh(trussGeo, trussMat);
+        truss.position.set(x, 30, 0);
+        scene.add(truss);
+      }
+    }
+
+    /* =========================================================================
+       11. MACHINE PROCEDURAL 3D MODELS & LAYOUT (All 83 Machines)
+       ========================================================================= */
+    function layoutAllMachines() {
+      // Shared Materials
+      const matNavy = new THREE.MeshStandardMaterial({ color: 0x00529B, roughness: 0.3, metalness: 0.6 });
+      const matBlue = new THREE.MeshStandardMaterial({ color: 0x0077CC, roughness: 0.25, metalness: 0.7 });
+      const matChrome = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.2, metalness: 0.9 });
+      const matDark = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.7, metalness: 0.3 });
+      const matCopper = new THREE.MeshStandardMaterial({ color: 0xD97706, roughness: 0.3, metalness: 0.8 });
+      const matAlum = new THREE.MeshStandardMaterial({ color: 0x94A3B8, roughness: 0.3, metalness: 0.7 });
+
+      // Group machines into production bays and assign physical positions:
+      
+      // --- BAY 1: Drawing & Bunching (DR: 1-7, BN: 61-68, RS: 9-14) ---
+      // DR01 - DR07 (Machines 1-7)
+      for (let i = 1; i <= 7; i++) {
+        const x = -130 + (i % 2) * 14;
+        const z = -80 + Math.floor(i / 2) * 32;
+        createMachine3D(i, 'drawing', x, z);
+      }
+
+      // BN01 - BN08 (Machines 61-68)
+      for (let i = 61; i <= 68; i++) {
+        const idx = i - 61;
+        const x = -105 + (idx % 2) * 14;
+        const z = -80 + Math.floor(idx / 2) * 32;
+        createMachine3D(i, 'buncher', x, z);
+      }
+
+      // RS01 - RS06 (Machines 9-14)
+      for (let i = 9; i <= 14; i++) {
+        const idx = i - 9;
+        const x = -80 + (idx % 2) * 14;
+        const z = -75 + Math.floor(idx / 2) * 36;
+        createMachine3D(i, 'strander', x, z);
+      }
+
+      // --- BAY 2: Stranding & Cabling (CS: 15-16, DS: 17, CN: 18, TN: 19, ST: 57-60, SR/PR/BT/SZ: 53-56, SingleTwist: 78) ---
+      const bay2Machines = [15, 16, 17, 18, 19, 57, 58, 59, 60, 53, 54, 55, 56, 78];
+      bay2Machines.forEach((mId, idx) => {
+        const col = idx % 3;
+        const row = Math.floor(idx / 3);
+        const x = -55 + col * 15;
+        const z = -80 + row * 28;
+        createMachine3D(mId, 'strander', x, z);
+      });
+
+      // --- BAY 3: CCV Lines (34-38) & Extrusion Lines (EX: 20-33) ---
+      // CCV01 - CCV05: Massive Vertical Towers with catenary tubes!
+      for (let i = 34; i <= 38; i++) {
+        const idx = i - 34;
+        const x = 16 + idx * 14;
+        const z = -65;
+        createMachine3D(i, 'ccv', x, z);
+      }
+
+      // EX01 - EX14 (Machines 20-33)
+      for (let i = 20; i <= 33; i++) {
+        const idx = i - 20;
+        const col = idx % 4;
+        const row = Math.floor(idx / 4);
+        const x = 14 + col * 15;
+        const z = -20 + row * 26;
+        createMachine3D(i, 'extruder', x, z);
+      }
+
+      // --- BAY 4: Screen, Tape & Armouring (CT: 39-41, CW: 42-44, DT: 45-52) ---
+      const bay4Machines = [39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52];
+      bay4Machines.forEach((mId, idx) => {
+        const col = idx % 3;
+        const row = Math.floor(idx / 3);
+        const x = 75 + col * 15;
+        const z = -80 + row * 28;
+        createMachine3D(mId, 'armouring', x, z);
+      });
+
+      // --- BAY 5: Coiling, Rewind & Finishing (CO: 69-73, RW: 74-77) ---
+      const bay5Machines = [69, 70, 71, 72, 73, 74, 75, 76, 77];
+      bay5Machines.forEach((mId, idx) => {
+        const col = idx % 3;
+        const row = Math.floor(idx / 3);
+        const x = 120 + col * 12;
+        const z = -80 + row * 26;
+        createMachine3D(mId, 'coiling', x, z);
+      });
+    }
+
+    function createMachine3D(machineId, type, x, z) {
+      const group = new THREE.Group();
+      group.position.set(x, 0, z);
+      group.userData = { machineId: machineId, type: type, originalColor: 0x00529B };
+
+      // Base Materials
+      const matNavy = new THREE.MeshStandardMaterial({ color: 0x00529B, roughness: 0.35, metalness: 0.6 });
+      const matChrome = new THREE.MeshStandardMaterial({ color: 0xCBD5E1, roughness: 0.2, metalness: 0.85 });
+      const matDark = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.6 });
+      const matSpool = new THREE.MeshStandardMaterial({ color: 0xB45309, roughness: 0.4, metalness: 0.7 });
+
+      let mainMesh = null;
+
+      if (type === 'ccv') {
+        // High-Voltage CCV Tower Structure (Distinctive vertical tower)
+        const towerGeo = new THREE.BoxGeometry(4.5, 14, 4.5);
+        const tower = new THREE.Mesh(towerGeo, matNavy);
+        tower.position.y = 7;
+        tower.castShadow = true;
+        group.add(tower);
+        mainMesh = tower;
+
+        // Top vulcanization head
+        const headGeo = new THREE.CylinderGeometry(2, 2.5, 3, 16);
+        const head = new THREE.Mesh(headGeo, matChrome);
+        head.position.y = 15;
+        group.add(head);
+
+        // Slanted catenary cooling tube extending from tower
+        const tubeGeo = new THREE.CylinderGeometry(0.5, 0.5, 18, 12);
+        const tube = new THREE.Mesh(tubeGeo, matChrome);
+        tube.rotation.z = Math.PI / 4;
+        tube.position.set(6, 6, 0);
+        group.add(tube);
+
+        // Large Take-up Reel
+        const reel = createCableReel(2.5, matSpool);
+        reel.position.set(13, 2.5, 0);
+        group.add(reel);
+        animatedSpools.push(reel);
+
+      } else if (type === 'extruder') {
+        // Horizontal Extruder Line: Motor + Barrel + Cooling Trough + Puller + Takeup
+        const baseGeo = new THREE.BoxGeometry(3, 2.5, 3.5);
+        const extruderBase = new THREE.Mesh(baseGeo, matNavy);
+        extruderBase.position.y = 1.25;
+        extruderBase.castShadow = true;
+        group.add(extruderBase);
+        mainMesh = extruderBase;
+
+        // Hopper cone
+        const hopperGeo = new THREE.ConeGeometry(1, 1.8, 12);
+        const hopper = new THREE.Mesh(hopperGeo, matChrome);
+        hopper.position.set(0, 3.4, 0);
+        group.add(hopper);
+
+        // Water Cooling Trough
+        const troughGeo = new THREE.BoxGeometry(1.2, 0.8, 8);
+        const trough = new THREE.Mesh(troughGeo, matChrome);
+        trough.position.set(0, 1.2, 5);
+        group.add(trough);
+
+        // Take-up Reel
+        const reel = createCableReel(1.8, matSpool);
+        reel.position.set(0, 1.8, 11);
+        group.add(reel);
+        animatedSpools.push(reel);
+
+      } else if (type === 'strander' || type === 'buncher') {
+        // Cylindrical Rotating Stranding Cage / Drum
+        const baseGeo = new THREE.BoxGeometry(3, 0.8, 8);
+        const base = new THREE.Mesh(baseGeo, matDark);
+        base.position.y = 0.4;
+        group.add(base);
+        mainMesh = base;
+
+        const cageGeo = new THREE.CylinderGeometry(1.5, 1.5, 7, 16);
+        const cage = new THREE.Mesh(cageGeo, matNavy);
+        cage.rotation.x = Math.PI / 2;
+        cage.position.set(0, 2, 0);
+        cage.castShadow = true;
+        group.add(cage);
+        animatedSpools.push(cage);
+
+        // End Capstan Wheels
+        const wheelGeo = new THREE.TorusGeometry(1.2, 0.25, 8, 24);
+        const wheel = new THREE.Mesh(wheelGeo, matChrome);
+        wheel.position.set(0, 2, 4.5);
+        group.add(wheel);
+
+      } else if (type === 'drawing') {
+        // Wire Drawing Enclosure with Pay-off spool
+        const boxGeo = new THREE.BoxGeometry(3.5, 2.6, 5);
+        const box = new THREE.Mesh(boxGeo, matNavy);
+        box.position.y = 1.3;
+        box.castShadow = true;
+        group.add(box);
+        mainMesh = box;
+
+        // Dual capstans
+        for (let cz of [-1.2, 1.2]) {
+          const capGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.6, 16);
+          const cap = new THREE.Mesh(capGeo, matChrome);
+          cap.position.set(0, 2.8, cz);
+          group.add(cap);
+          animatedSpools.push(cap);
+        }
+
+      } else {
+        // Armouring, Coiling & General Lines
+        const baseGeo = new THREE.BoxGeometry(3.2, 2.2, 4.5);
+        const base = new THREE.Mesh(baseGeo, matNavy);
+        base.position.y = 1.1;
+        base.castShadow = true;
+        group.add(base);
+        mainMesh = base;
+
+        const reel = createCableReel(1.6, matSpool);
+        reel.position.set(0, 1.8, 3.5);
+        group.add(reel);
+        animatedSpools.push(reel);
+      }
+
+      // Status Beacon on top of every machine
+      const beaconGroup = new THREE.Group();
+      const poleGeo = new THREE.CylinderGeometry(0.08, 0.08, 1.5, 8);
+      const pole = new THREE.Mesh(poleGeo, matChrome);
+      pole.position.y = 0.75;
+      beaconGroup.add(pole);
+
+      const lampGeo = new THREE.SphereGeometry(0.35, 16, 16);
+      const lampMat = new THREE.MeshStandardMaterial({
+        color: 0x94A3B8,
+        emissive: 0x94A3B8,
+        emissiveIntensity: 0.4
+      });
+      const lamp = new THREE.Mesh(lampGeo, lampMat);
+      lamp.position.y = 1.6;
+      beaconGroup.add(lamp);
+
+      // Position beacon based on machine height
+      const beaconY = type === 'ccv' ? 16.5 : (type === 'drawing' ? 3.0 : 2.7);
+      beaconGroup.position.set(0, beaconY, 0);
+      group.add(beaconGroup);
+
+      // Machine Label Sprite (Canvas rendered text)
+      const labelSprite = createMachineLabelSprite(MACHINE_MAP[machineId] || `${machineId}`);
+      labelSprite.position.set(0, beaconY + 2.2, 0);
+      group.add(labelSprite);
+
+      // Store references for dynamic updates
+      group.userData.mainMesh = mainMesh;
+      group.userData.beaconLamp = lamp;
+      group.userData.labelSprite = labelSprite;
+
+      scene.add(group);
+      machineMeshes[machineId] = group;
+    }
+
+    function createCableReel(radius, material) {
+      const reelGroup = new THREE.Group();
+      // Flanges
+      for (let z of [-0.6, 0.6]) {
+        const flangeGeo = new THREE.CylinderGeometry(radius, radius, 0.15, 24);
+        const flange = new THREE.Mesh(flangeGeo, material);
+        flange.rotation.x = Math.PI / 2;
+        flange.position.z = z;
+        reelGroup.add(flange);
+      }
+      // Core drum with black cable
+      const coreGeo = new THREE.CylinderGeometry(radius * 0.75, radius * 0.75, 1.1, 24);
+      const cableMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.9 });
+      const core = new THREE.Mesh(coreGeo, cableMat);
+      core.rotation.x = Math.PI / 2;
+      reelGroup.add(core);
+
+      return reelGroup;
+    }
+
+    function createMachineLabelSprite(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 160;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+
+      // Rounded background tag
+      ctx.fillStyle = 'rgba(0, 51, 102, 0.88)';
+      ctx.strokeStyle = '#00A3E0';
+      ctx.lineWidth = 3;
+      roundRect(ctx, 4, 4, 152, 56, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      // Text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 24px Cairo, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 80, 32);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(6, 2.4, 1);
+      return sprite;
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    /* =========================================================================
+       12. DYNAMIC 3D COLOR MODES & UPDATES
+       ========================================================================= */
+    function set3DColorMode(mode) {
+      current3DMode = mode;
+      
+      // Update buttons style
+      ['status', 'heatmap', 'material', 'stage'].forEach(m => {
+        const btn = document.getElementById(`btn-mode-${m}`);
+        if (m === mode) {
+          btn.className = "px-2.5 py-1 rounded-lg bg-energya-royal text-white text-[11px] font-bold transition shadow-sm";
+        } else {
+          btn.className = "px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] text-slate-700 font-bold transition";
+        }
+      });
+
+      update3DLegend();
+      update3DMachines();
+    }
+
+    function update3DLegend() {
+      const legend = document.getElementById('legend-content');
+      if (current3DMode === 'status') {
+        legend.innerHTML = `
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span><span>ماكينة نشطة (تعمل)</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-energya-blue inline-block"></span><span>ماكينة إنتاج قياسي (Top)</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-300 inline-block"></span><span>ماكينة متوقفة / خاملة</span></div>
+        `;
+      } else if (current3DMode === 'heatmap') {
+        legend.innerHTML = `
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rose-600 inline-block"></span><span>إنتاج عالي جداً (> 7 طن)</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span><span>إنتاج متوسط (3 - 7 طن)</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-sky-500 inline-block"></span><span>إنتاج خفيف (< 3 طن)</span></div>
+        `;
+      } else if (current3DMode === 'material') {
+        legend.innerHTML = `
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-600 inline-block"></span><span>خط إنتاج نحاس (Copper)</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-400 inline-block"></span><span>خط إنتاج ألومنيوم (Aluminum)</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-200 inline-block"></span><span>بدون تشغيل خامات</span></div>
+        `;
+      } else if (current3DMode === 'stage') {
+        legend.innerHTML = `
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-600 inline-block"></span><span>سحب وتجديل (DR/STD)</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-indigo-600 inline-block"></span><span>عزل و CCV (INS/CCV)</span></div>
+          <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-600 inline-block"></span><span>تسليح وشيلد (ARM/SCT)</span></div>
+        `;
+      }
+    }
+
+    function update3DMachines() {
+      // Find maximum machine tonnage for normalization
+      let maxTons = 1;
+      for (const mId in machineStats) {
+        if (machineStats[mId].totalTons > maxTons) maxTons = machineStats[mId].totalTons;
+      }
+
+      for (const mId in machineMeshes) {
+        const group = machineMeshes[mId];
+        const stats = machineStats[mId] || { totalTons: 0, copperTons: 0, aluminumTons: 0 };
+        const lamp = group.userData.beaconLamp;
+        const mainMesh = group.userData.mainMesh;
+
+        const hasOutput = stats.totalTons > 0;
+        const isTop = stats.totalTons >= maxTons * 0.75 && maxTons > 0;
+
+        // 1. Update Beacon Lamp Color
+        if (hasOutput) {
+          if (isTop) {
+            lamp.material.color.setHex(0x00A3E0);
+            lamp.material.emissive.setHex(0x00A3E0);
+            lamp.material.emissiveIntensity = 0.9;
+          } else {
+            lamp.material.color.setHex(0x10B981);
+            lamp.material.emissive.setHex(0x10B981);
+            lamp.material.emissiveIntensity = 0.75;
+          }
+        } else {
+          lamp.material.color.setHex(0x94A3B8);
+          lamp.material.emissive.setHex(0x475569);
+          lamp.material.emissiveIntensity = 0.15;
+        }
+
+        // 2. Update Main Mesh Color based on View Mode
+        if (mainMesh) {
+          if (current3DMode === 'status') {
+            mainMesh.material.color.setHex(hasOutput ? (isTop ? 0x0077CC : 0x00529B) : 0x64748B);
+          } else if (current3DMode === 'heatmap') {
+            if (!hasOutput) {
+              mainMesh.material.color.setHex(0x94A3B8);
+            } else {
+              const ratio = stats.totalTons / maxTons;
+              if (ratio > 0.65) mainMesh.material.color.setHex(0xE11D48); // Hot Red
+              else if (ratio > 0.3) mainMesh.material.color.setHex(0xF59E0B); // Amber
+              else mainMesh.material.color.setHex(0x0284C7); // Sky Blue
+            }
+          } else if (current3DMode === 'material') {
+            if (!hasOutput) {
+              mainMesh.material.color.setHex(0x94A3B8);
+            } else if (stats.copperTons > stats.aluminumTons) {
+              mainMesh.material.color.setHex(0xD97706); // Copper Gold
+            } else {
+              mainMesh.material.color.setHex(0x64748B); // Aluminum Silver
+            }
+          } else if (current3DMode === 'stage') {
+            const sid = stats.stageId || 1;
+            if (sid <= 2 || sid === 4) mainMesh.material.color.setHex(0x0284C7);
+            else if (sid === 5 || sid === 6) mainMesh.material.color.setHex(0x4F46E5);
+            else if (sid >= 14 && sid <= 16) mainMesh.material.color.setHex(0xD97706);
+            else mainMesh.material.color.setHex(0x059669);
+          }
+        }
+      }
+    }
+
+    /* =========================================================================
+       13. 3D INTERACTIVITY (Hover Tooltip, Selection, Tween Animation)
+       ========================================================================= */
+    function onMouseMove(event) {
+      const container = document.getElementById('canvas-container');
+      const rect = container.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+
+      let foundMachine = null;
+      for (let hit of intersects) {
+        let curr = hit.object;
+        while (curr && curr.parent && curr.parent !== scene) {
+          if (curr.userData && curr.userData.machineId) {
+            foundMachine = curr.userData.machineId;
+            break;
+          }
+          curr = curr.parent;
+        }
+        if (foundMachine) break;
+      }
+
+      const tooltip = document.getElementById('machine-tooltip');
+      if (foundMachine) {
+        container.style.cursor = 'pointer';
+        const stats = machineStats[foundMachine] || { totalTons: 0, stageId: null };
+        document.getElementById('tt-name').innerText = getMachineName(foundMachine);
+        document.getElementById('tt-stage').innerText = stats.stageId ? getStageName(stats.stageId) : 'جاهزة للتشغيل';
+        document.getElementById('tt-tons').innerText = `الإنتاج: ${stats.totalTons.toFixed(2)} طن`;
+        
+        tooltip.style.left = `${event.clientX - rect.left}px`;
+        tooltip.style.top = `${event.clientY - rect.top}px`;
+        tooltip.classList.remove('hidden');
+      } else {
+        container.style.cursor = 'default';
+        tooltip.classList.add('hidden');
+      }
+    }
+
+    function onMouseClick(event) {
+      const container = document.getElementById('canvas-container');
+      const rect = container.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+
+      for (let hit of intersects) {
+        let curr = hit.object;
+        while (curr && curr.parent && curr.parent !== scene) {
+          if (curr.userData && curr.userData.machineId) {
+            selectMachineIn3D(curr.userData.machineId);
+            return;
+          }
+          curr = curr.parent;
+        }
+      }
+    }
+
+    function selectMachineIn3D(machineId) {
+      selectedMachineId = machineId;
+      const group = machineMeshes[machineId];
+      if (!group) return;
+
+      // If 3D section is currently hidden, switch to split view so user sees the focused machine
+      const sec3D = document.getElementById('section-3d');
+      if (sec3D && sec3D.classList.contains('hidden')) {
+        switchViewTab('split');
+      }
+
+      // Position highlight ring under machine
+      highlightRing.position.set(group.position.x, 0.12, group.position.z);
+      highlightRing.visible = true;
+
+      // Smoothly animate camera to focus on machine
+      const targetPos = new THREE.Vector3(group.position.x, group.position.y + 2, group.position.z);
+      const camPos = new THREE.Vector3(group.position.x + 18, group.position.y + 14, group.position.z + 24);
+
+      new TWEEN.Tween(camera.position)
+        .to({ x: camPos.x, y: camPos.y, z: camPos.z }, 1000)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .start();
+
+      new TWEEN.Tween(controls.target)
+        .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, 1000)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .start();
+
+      // Open Machine Inspector Sidebar
+      populateMachineInspector(machineId);
+    }
+
+    function populateMachineInspector(machineId) {
+      const stats = machineStats[machineId] || {
+        totalTons: 0,
+        totalMeters: 0,
+        ordersCount: 0,
+        reelsCount: 0,
+        copperTons: 0,
+        aluminumTons: 0,
+        shifts: new Set(),
+        supervisors: new Set(),
+        stageId: null
+      };
+
+      document.getElementById('inspect-machine-name').innerText = getMachineName(machineId);
+      document.getElementById('inspect-machine-id').innerText = `ID: ${machineId}`;
+      document.getElementById('inspect-machine-stage').innerText = stats.stageId ? getStageName(stats.stageId) : 'مرحلة غير محددة';
+      
+      const badge = document.getElementById('inspect-machine-status-badge');
+      if (stats.totalTons > 0) {
+        badge.className = "mb-3 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold flex items-center justify-between border border-emerald-200";
+        badge.innerHTML = `<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span><span>الحالة: نشطة وجاري الإنتاج</span></span><span class="text-[10px] text-slate-500 font-mono">ID: ${machineId}</span>`;
+      } else {
+        badge.className = "mb-3 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-between border border-slate-200";
+        badge.innerHTML = `<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-slate-400"></span><span>الحالة: في وضع الاستعداد</span></span><span class="text-[10px] text-slate-500 font-mono">ID: ${machineId}</span>`;
+      }
+
+      document.getElementById('inspect-tons').innerText = stats.totalTons.toFixed(2);
+      document.getElementById('inspect-meters').innerText = Math.round(stats.totalMeters).toLocaleString();
+      document.getElementById('inspect-orders').innerText = stats.ordersCount;
+      document.getElementById('inspect-reels').innerText = stats.reelsCount;
+
+      const totalMat = stats.copperTons + stats.aluminumTons;
+      const cuPercent = totalMat > 0 ? Math.round((stats.copperTons / totalMat) * 100) : 50;
+      const alPercent = 100 - cuPercent;
+      document.getElementById('inspect-mat-ratio').innerText = `نحاس ${cuPercent}% | ألومنيوم ${alPercent}%`;
+      document.getElementById('inspect-copper-bar').style.width = `${cuPercent}%`;
+      document.getElementById('inspect-alum-bar').style.width = `${alPercent}%`;
+
+      const supNames = Array.from(stats.supervisors).map(sid => getSupervisorName(sid).split(' ')[0]).join(', ');
+      document.getElementById('inspect-supervisors').innerText = supNames || 'لا يوجد';
+      document.getElementById('inspect-shifts').innerText = Array.from(stats.shifts).join(', ') || 'لا يوجد';
+
+      // Last Operation Cards & Reels
+      const lastRec = (stats.records && stats.records.length > 0) ? stats.records[stats.records.length - 1] : null;
+      if (lastRec) {
+        document.getElementById('inspect-receive-card').innerText = cleanReelOrCard(lastRec.ReceiveCardNo);
+        document.getElementById('inspect-payoff-reel').innerText = cleanReelOrCard(lastRec.PayOffNo);
+        document.getElementById('inspect-send-card').innerText = cleanReelOrCard(lastRec.SendCardNo);
+        document.getElementById('inspect-takeup-reel').innerText = cleanReelOrCard(lastRec.TakeUpNo);
+      } else {
+        document.getElementById('inspect-receive-card').innerText = 'without';
+        document.getElementById('inspect-payoff-reel').innerText = 'without';
+        document.getElementById('inspect-send-card').innerText = 'without';
+        document.getElementById('inspect-takeup-reel').innerText = 'without';
+      }
+
+      document.getElementById('machine-inspector').classList.remove('hidden');
+    }
+
+    function closeMachineInspector() {
+      document.getElementById('machine-inspector').classList.add('hidden');
+      highlightRing.visible = false;
+      selectedMachineId = null;
+    }
+
+    /* Camera Preset Angles */
+    function setCameraAngle(preset) {
+      closeMachineInspector();
+      let targetCam = { x: 0, y: 95, z: 150 };
+      let targetCenter = { x: 0, y: 0, z: 0 };
+
+      if (preset === 'overview') {
+        targetCam = { x: 0, y: 95, z: 150 };
+      } else if (preset === 'top') {
+        targetCam = { x: 0, y: 190, z: 1 };
+      } else if (preset === 'bay1') {
+        targetCam = { x: -95, y: 40, z: 70 };
+        targetCenter = { x: -95, y: 0, z: 0 };
+      } else if (preset === 'bay3') {
+        targetCam = { x: 30, y: 45, z: 65 };
+        targetCenter = { x: 30, y: 0, z: 0 };
+      } else if (preset === 'bay4') {
+        targetCam = { x: 95, y: 40, z: 70 };
+        targetCenter = { x: 95, y: 0, z: 0 };
+      }
+
+      new TWEEN.Tween(camera.position).to(targetCam, 1000).easing(TWEEN.Easing.Cubic.Out).start();
+      new TWEEN.Tween(controls.target).to(targetCenter, 1000).easing(TWEEN.Easing.Cubic.Out).start();
+    }
+
+    function resetCameraView() {
+      setCameraAngle('overview');
+    }
+
+    function toggleAnimations() {
+      animationsEnabled = !animationsEnabled;
+      const btn = document.getElementById('btn-toggle-anim');
+      if (animationsEnabled) {
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i> إيقاف الحركة';
+        btn.className = "px-2 py-1 bg-energya-royal text-white rounded text-[11px] font-bold flex items-center gap-1";
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> تشغيل الحركة';
+        btn.className = "px-2 py-1 bg-slate-100 text-energya-royal rounded text-[11px] font-bold flex items-center gap-1";
+      }
+    }
+
+    /* Resize Handler */
+    function onWindowResize() {
+      const container = document.getElementById('canvas-container');
+      if (!container || !renderer || !camera) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    /* Animation Render Loop (Pauses automatically when 3D tab is hidden to save GPU/CPU) */
+    function animate3D(time) {
+      if (!is3DLoopRunning) return;
+      animFrameId = requestAnimationFrame(animate3D);
+      TWEEN.update();
+
+      // Rotate spools and strander cages
+      if (animationsEnabled) {
+        animatedSpools.forEach(spool => {
+          spool.rotation.y += 0.04;
+        });
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    /* =========================================================================
+       14. VIEW TAB SWITCHER & WORKSPACE MODES
+       ========================================================================= */
+    function switchViewTab(tab) {
+      const sec3D = document.getElementById('section-3d');
+      const secAnalytics = document.getElementById('section-analytics');
+      const secData = document.getElementById('section-data-table');
+      const kpis = document.getElementById('kpi-cards-container');
+
+      // Update tab buttons
+      ['split', 'twin3d', 'analytics', 'data', 'wip'].forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        if (btn) {
+          if (t === tab) {
+            btn.className = "tab-btn active px-3.5 py-1.5 rounded-md flex items-center gap-2";
+          } else {
+            btn.className = (t === 'wip')
+              ? "tab-btn bg-emerald-500/25 text-white hover:bg-emerald-500/40 px-3.5 py-1.5 rounded-md flex items-center gap-2 border border-emerald-400/30"
+              : "tab-btn bg-white/15 text-white hover:bg-white/25 px-3.5 py-1.5 rounded-md flex items-center gap-2";
+          }
+        }
+      });
+
+      if (tab === 'split') {
+        kpis.classList.remove('hidden');
+        sec3D.classList.remove('hidden');
+        secAnalytics.classList.remove('hidden');
+        secData.classList.add('hidden');
+        secAnalytics.className = "w-full lg:w-[48%] flex flex-col gap-3.5 overflow-y-auto max-h-[820px] pr-1";
+      } else if (tab === 'twin3d') {
+        kpis.classList.remove('hidden');
+        sec3D.classList.remove('hidden');
+        secAnalytics.classList.add('hidden');
+        secData.classList.add('hidden');
+      } else if (tab === 'analytics') {
+        kpis.classList.remove('hidden');
+        sec3D.classList.add('hidden');
+        secAnalytics.classList.remove('hidden');
+        secData.classList.add('hidden');
+        secAnalytics.className = "w-full flex flex-col gap-3.5 pr-1";
+      } else if (tab === 'data') {
+        kpis.classList.remove('hidden');
+        sec3D.classList.add('hidden');
+        secAnalytics.classList.add('hidden');
+        secData.classList.remove('hidden');
+        switchTableSubTab('production');
+      } else if (tab === 'wip') {
+        // PURE DATA ONLY - No KPIs, No 3D, No Charts
+        kpis.classList.add('hidden');
+        sec3D.classList.add('hidden');
+        secAnalytics.classList.add('hidden');
+        secData.classList.remove('hidden');
+        switchTableSubTab('wip');
+      }
+
+      // Smart 3D GPU/CPU Power Management: Pause loop when 3D is hidden, resume when visible
+      const is3DVisible = (tab === 'split' || tab === 'twin3d');
+      if (is3DVisible) {
+        if (!is3DLoopRunning) {
+          is3DLoopRunning = true;
+          animFrameId = requestAnimationFrame(animate3D);
+        }
+        setTimeout(onWindowResize, 100);
+      } else {
+        is3DLoopRunning = false;
+        if (animFrameId) {
+          cancelAnimationFrame(animFrameId);
+          animFrameId = null;
+        }
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    function showToast(msg, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      const toastIcon = document.getElementById('toast-icon');
+
+      toastMsg.innerText = msg;
+      if (type === 'success') {
+        toastIcon.className = "w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center";
+        toastIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+      } else if (type === 'error') {
+        toastIcon.className = "w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center";
+        toastIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+      } else {
+        toastIcon.className = "w-7 h-7 rounded-lg bg-energya-royal text-white flex items-center justify-center";
+        toastIcon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
+    /* =========================================================================
+       15. BUILT-IN SAMPLE PRODUCTION DATASET (Energya Cables Authentic Data)
+       ========================================================================= */
+    function loadSampleData() {
+      const sampleCSV = `OrderID,RegDate,ShiftCode,StageID,MachineID,SupervisorID,ConductorMaterial,WireType,CoreCount,WireSize,LengthMeters,TakeUpNo,StatusID,WeightTon,CreatedBy,LastModified,FactoryID,RecordID,PayOffNo,Remark,PalletRef,CopperTon,AluminumTon,ScreenTon,ArmourTon,SendCardNo,ReceiveCardNo,InputLengths
+ORD-2026-1001,2026-10-14,S1,1,1,1,نحاس,Bare Copper Wire,1,2.58,15400,TK-9011,1,3.45,ENG_AHMED,2026-10-14 07:30,1,REC-001,Z-199,سحب ناعم عالي الجودة,PAL-01,3.45,0.00,0.00,0.00,16109,RC-201,15400
+ORD-2026-1002,2026-10-14,S1,1,2,15,نحاس,Bare Copper Wire,1,3.20,12800,TK-9012,1,4.12,ENG_MOHAMED,2026-10-14 07:45,1,REC-002,PO-102,سحب متوسط,PAL-02,4.12,0.00,0.00,0.00,SC-552,RC-202,12800
+ORD-2026-1003,2026-10-14,S1,1,3,17,ألومنيوم,Bare Al Wire,1,3.50,18500,TK-9013,1,2.85,ENG_HASSAN,2026-10-14 08:00,1,REC-003,PO-103,سحب ألومنيوم نقي,PAL-03,0.00,2.85,0.00,0.00,SC-553,RC-203,18500
+ORD-2026-1004,2026-10-14,S1,2,9,32,نحاس,Stranded Conductor,7,16,6200,TK-9014,1,5.60,ENG_AHMED,2026-10-14 08:15,1,REC-004,TK-9011,تجديل 7 أسلاك نحاس (سحب من TK-9011),PAL-04,5.60,0.00,0.00,0.00,RC-201,RC-204,10000
+ORD-2026-1005,2026-10-14,S1,2,10,47,ألومنيوم,Stranded Compacted,19,70,5400,TK-9015,1,3.90,ENG_MOHAMED,2026-10-14 08:30,1,REC-005,PO-105,تجديل ألومنيوم مضغوط,PAL-05,0.00,3.90,0.00,0.00,SC-555,RC-205,5400
+ORD-2026-1006,2026-10-14,S1,5,20,61,نحاس,Low Voltage NYY,1,50,4200,TK-9016,1,4.75,ENG_AYMAN,2026-10-14 08:45,1,REC-006,TK-9012,عزل PVC أحمر (استهلاك كامل TK-9012),PAL-06,2.80,0.00,0.00,0.00,RC-202,RC-206,12800
+ORD-2026-1007,2026-10-14,S1,5,21,62,نحاس,Low Voltage NYY,1,95,3500,TK-9017,1,5.20,ENG_ROSHDY,2026-10-14 09:00,1,REC-007,PO-107,عزل PVC أزرق,PAL-07,3.60,0.00,0.00,0.00,SC-557,RC-207,3500
+ORD-2026-1008,2026-10-14,S1,5,22,77,ألومنيوم,NA2XY XLPE,1,150,3800,TK-9018,1,3.40,ENG_SAMI,2026-10-14 09:15,1,REC-008,PO-108,عزل XLPE شفاف,PAL-08,0.00,2.10,0.00,0.00,SC-558,RC-208,3800
+ORD-2026-1009,2026-10-14,S1,6,34,79,نحاس,Medium Voltage 18/30kV,1,240,2400,TK-9019,1,7.80,ENG_IBRAHIM,2026-10-14 09:30,1,REC-009,PO-109,بثق ثلاثي CCV جهد متوسط,PAL-09,5.20,0.00,0.00,0.00,SC-559,RC-209,2400
+ORD-2026-1010,2026-10-14,S1,6,35,90,نحاس,High Voltage 66kV,1,500,1800,TK-9020,1,9.45,ENG_MOSTAFA,2026-10-14 09:45,1,REC-010,PO-110,بثق جهد عالي برج CCV,PAL-10,7.10,0.00,0.00,0.00,SC-560,RC-210,1800
+ORD-2026-1011,2026-10-14,S1,9,42,96,نحاس,Copper Wire Screen,1,240,2400,TK-9021,1,2.15,ENG_ALI,2026-10-14 10:00,1,REC-011,PO-111,تطبيق شيلد أسلاك نحاسية,PAL-11,2.15,0.00,2.15,0.00,SC-561,RC-211,2400
+ORD-2026-1012,2026-10-14,S1,11,15,100,نحاس,Multi-Core Assembled,4,25,3200,TK-9022,1,5.10,ENG_SAYED,2026-10-14 10:15,1,REC-012,PO-112,تجميع 4 أطراف مع حشو,PAL-12,3.80,0.00,0.00,0.00,SC-562,RC-212,3200
+ORD-2026-1013,2026-10-14,S1,14,45,105,نحاس,Armoured SWA,4,25,3200,TK-9023,1,7.20,ENG_MAHMOUD,2026-10-14 10:30,1,REC-013,PO-113,تسليح أسلاك صلب مجلفن,PAL-13,3.80,0.00,0.00,2.10,SC-563,RC-213,3200
+ORD-2026-1014,2026-10-14,S1,17,25,107,نحاس,Armoured Sheathed,4,25,3200,TK-9024,1,8.90,ENG_SHAWKY,2026-10-14 10:45,1,REC-014,PO-114,غلاف خارجي أسود ST2,PAL-14,3.80,0.00,0.00,2.10,SC-564,RC-214,3200
+ORD-2026-1015,2026-10-14,S1,18,69,108,نحاس,Building Wire Single,1,2.5,25000,without,1,1.90,ENG_MOSTAFA,2026-10-14 11:00,1,REC-015,0,لف لفات 100م كرتون بدون بكرة,PAL-15,1.40,0.00,0.00,0.00,without,RC-215,25000
+ORD-2026-1016,2026-10-14,S2,1,4,110,نحاس,Bare Copper Wire,1,1.78,22000,TK-9026,1,3.80,ENG_WAEL,2026-10-14 15:30,1,REC-016,PO-116,سحب ناعم متعدد,PAL-16,3.80,0.00,0.00,0.00,SC-566,RC-216,22000
+ORD-2026-1017,2026-10-14,S2,1,5,111,نحاس,Bare Copper Wire,1,2.14,18000,TK-9027,1,4.25,ENG_ABDO,2026-10-14 15:45,1,REC-017,PO-117,سحب عالي السرعة,PAL-17,4.25,0.00,0.00,0.00,SC-567,RC-217,18000
+ORD-2026-1018,2026-10-14,S2,4,61,114,نحاس,Flexible Bunched,1,4,14000,TK-9028,1,3.60,ENG_HAMID,2026-10-14 16:00,1,REC-018,PO-118,تجميع شعيرات مرنة class 5,PAL-18,3.60,0.00,0.00,0.00,SC-568,RC-218,14000
+ORD-2026-1019,2026-10-14,S2,4,62,115,نحاس,Flexible Bunched,1,6,11000,TK-9029,1,4.10,ENG_ASHRAF,2026-10-14 16:15,1,REC-019,PO-119,تجميع 84 سلك مرن,PAL-19,4.10,0.00,0.00,0.00,SC-569,RC-219,11000
+ORD-2026-1020,2026-10-14,S2,5,23,117,نحاس,Flexible H07V-K,1,4,14000,TK-9030,1,4.50,ENG_REDA,2026-10-14 16:30,1,REC-020,PO-120,عزل سلك مرن أصفر/أخضر,PAL-20,3.60,0.00,0.00,0.00,SC-570,RC-220,14000
+ORD-2026-1021,2026-10-14,S2,5,24,119,نحاس,Flexible H07V-K,1,6,11000,TK-9031,1,5.10,ENG_FAHMY,2026-10-14 16:45,1,REC-021,PO-121,عزل سلك مرن أسود,PAL-21,4.10,0.00,0.00,0.00,SC-571,RC-221,11000
+ORD-2026-1022,2026-10-14,S2,6,36,120,ألومنيوم,Medium Voltage AL,1,300,2100,TK-9032,1,6.50,ENG_SAMIE,2026-10-14 17:00,1,REC-022,PO-122,بثق خط CCV كابل ألومنيوم,PAL-22,0.00,3.20,0.00,0.00,SC-572,RC-222,2100
+ORD-2026-1023,2026-10-14,S2,7,39,123,نحاس,Copper Tape Screen,1,300,2100,TK-9033,1,1.80,ENG_MAGDY,2026-10-14 17:15,1,REC-023,PO-123,لف شريط نحاسي حلزوني,PAL-23,1.80,0.00,1.80,0.00,SC-573,RC-223,2100
+ORD-2026-1024,2026-10-14,S2,12,26,126,ألومنيوم,Bedding Extrusion,3,185,1600,TK-9034,1,4.30,ENG_KAMEL,2026-10-14 17:30,1,REC-024,PO-124,تبطين PVC للجهد المتوسط,PAL-24,0.00,2.60,0.00,0.00,SC-574,RC-224,1600
+ORD-2026-1025,2026-10-14,S2,14,46,128,ألومنيوم,STA Steel Tape,3,185,1600,TK-9035,1,6.80,ENG_GHANY,2026-10-14 17:45,1,REC-025,PO-125,تسليح شريطين صلب متبادلين,PAL-25,0.00,2.60,0.00,2.50,SC-575,RC-225,1600
+ORD-2026-1026,2026-10-14,S2,17,27,132,ألومنيوم,Over Sheath,3,185,1600,TK-9036,1,8.40,ENG_SHERIF,2026-10-14 18:00,1,REC-026,PO-126,غلاف نهائي أحمر مقاوم للحريق,PAL-26,0.00,2.60,0.00,2.50,SC-576,RC-226,1600
+ORD-2026-1027,2026-10-14,S2,19,74,133,نحاس,Rewind & Test,4,25,3200,TK-9037,1,7.20,ENG_HESHMAT,2026-10-14 18:15,1,REC-027,PO-127,اختبار شرارة ومقاومة عزل,PAL-27,3.80,0.00,0.00,2.10,SC-577,RC-227,3200
+ORD-2026-1028,2026-10-14,S3,1,6,134,نحاس,Bare Copper Wire,1,2.80,16500,TK-9038,1,4.40,ENG_MEHREZ,2026-10-14 23:30,1,REC-028,PO-128,سحب وردية ليلية,PAL-28,4.40,0.00,0.00,0.00,SC-578,RC-228,16500
+ORD-2026-1029,2026-10-14,S3,2,11,135,نحاس,Stranded Conductor,19,50,4800,TK-9039,1,4.90,ENG_GOUDA,2026-10-14 23:45,1,REC-029,PO-129,تجديل دائري غير مضغوط,PAL-29,4.90,0.00,0.00,0.00,SC-579,RC-229,4800
+ORD-2026-1030,2026-10-14,S3,5,28,141,نحاس,Insulated Core,1,50,4800,TK-9040,1,5.60,ENG_SABER,2026-10-15 00:00,1,REC-030,PO-130,عزل XLPE 90C أسود,PAL-30,4.90,0.00,0.00,0.00,SC-580,RC-230,4800
+ORD-2026-1031,2026-10-14,S3,6,37,142,نحاس,HV Underground,1,630,1500,TK-9041,1,10.20,ENG_WAEL2,2026-10-15 00:30,1,REC-031,PO-131,كابل كود إنيرجيا للجهد العالي,PAL-31,8.30,0.00,0.00,0.00,SC-581,RC-231,1500
+ORD-2026-1032,2026-10-14,S3,11,16,143,نحاس,Multi-Core Cabling,4,35,2800,TK-9042,1,5.90,ENG_SHAHAT,2026-10-15 01:00,1,REC-032,PO-132,تجميع 4 قلوب قطاعي,PAL-32,4.60,0.00,0.00,0.00,SC-582,RC-232,2800
+ORD-2026-1033,2026-10-14,S3,14,47,144,نحاس,Steel Tape Armour,4,35,2800,TK-9043,1,7.85,ENG_SHERIF2,2026-10-15 01:30,1,REC-033,PO-133,تسليح كابلات قوى منخفضة,PAL-33,4.60,0.00,0.00,1.95,SC-583,RC-233,2800
+ORD-2026-1034,2026-10-14,S3,17,29,148,نحاس,Sheathing Line,4,35,2800,TK-9044,1,9.80,ENG_HAMED2,2026-10-15 02:00,1,REC-034,PO-134,غلاف PVC مقاوم للزيوت,PAL-34,4.60,0.00,0.00,1.95,SC-584,RC-234,2800
+ORD-2026-1035,2026-10-14,S3,18,70,150,نحاس,Coiling Line,1,4,18000,TK-9045,1,2.40,ENG_SALAH,2026-10-15 02:30,1,REC-035,PO-135,تعبئة بكرات خشبية صغيرة,PAL-35,1.90,0.00,0.00,0.00,SC-585,RC-235,18000
+ORD-2026-1036,2026-10-14,F1,1,7,152,ألومنيوم,Bare Al Rod,1,4.50,14000,TK-9046,1,3.10,ENG_FAWZY,2026-10-14 06:00,1,REC-036,PO-136,وردية جمعة إضافية,PAL-36,0.00,3.10,0.00,0.00,SC-586,RC-236,14000
+ORD-2026-1037,2026-10-14,F1,2,12,153,ألومنيوم,All Aluminum Conductor,7,25,8500,TK-9047,1,3.40,ENG_EMAM,2026-10-14 07:00,1,REC-037,PO-137,تجديل خط هوائي AAC,PAL-37,0.00,3.40,0.00,0.00,SC-587,RC-237,8500
+ORD-2026-1038,2026-10-14,F1,5,30,155,ألومنيوم,Aerial Bundle Cable,3,70,3600,TK-9048,1,4.80,ENG_SALAH2,2026-10-14 08:00,1,REC-038,PO-138,عزل كابلات هوائية معلقة ABC,PAL-38,0.00,2.80,0.00,0.00,SC-588,RC-238,3600
+ORD-2026-1039,2026-10-14,F1,6,38,159,نحاس,Special MV Line,1,400,1900,TK-9049,1,8.60,ENG_YOUSRY,2026-10-14 09:00,1,REC-039,PO-139,بثق مواصفات أرامكو,PAL-39,6.20,0.00,0.00,0.00,SC-589,RC-239,1900
+ORD-2026-1040,2026-10-14,F1,14,48,160,نحاس,Armoured SWA Special,3,120,2000,TK-9050,1,7.90,ENG_KADER,2026-10-14 10:00,1,REC-040,PO-140,تسليح كابلات طاقة محطات,PAL-40,4.20,0.00,0.00,2.30,SC-590,RC-240,2000
+ORD-2026-1041,2026-10-14,F2,2,13,161,نحاس,ACSR Core,19,95,4100,TK-9051,1,5.30,ENG_ALAA,2026-10-14 14:00,1,REC-041,PO-141,تجديل موصل هوائي مقوى بصلب,PAL-41,4.10,0.00,0.00,0.00,SC-591,RC-241,4100
+ORD-2026-1042,2026-10-14,F2,5,31,165,نحاس,Solar Cable PV,1,6,16000,TK-9052,1,4.20,ENG_RADWAN,2026-10-14 15:00,1,REC-042,PO-142,كابلات طاقة شمسية خالية من الهالوجين,PAL-42,3.10,0.00,0.00,0.00,SC-592,RC-242,16000
+ORD-2026-1043,2026-10-14,F2,17,32,166,نحاس,Solar Outer Sheath,1,6,16000,TK-9053,1,5.80,ENG_SAMEH,2026-10-14 16:00,1,REC-043,PO-143,غلاف خارجي مقاوم للأشعة فوق البنفسجية,PAL-43,3.10,0.00,0.00,0.00,SC-593,RC-243,16000
+ORD-2026-1044,2026-10-14,F2,18,71,167,نحاس,Final Packing,1,6,16000,TK-9054,1,5.80,ENG_DESOUKY,2026-10-14 17:00,1,REC-044,PO-144,تعبئة بكرات تصدير,PAL-44,3.10,0.00,0.00,0.00,SC-594,RC-244,16000
+ORD-2026-1045,2026-10-14,S1,3,39,172,نحاس,Semi-Conductive Tape,1,185,3100,TK-9055,1,2.10,ENG_WAHEED,2026-10-14 11:30,1,REC-045,PO-145,شريط مانع للوميض,PAL-45,1.80,0.00,0.00,0.00,SC-595,RC-245,3100
+ORD-2026-1046,2026-10-14,S1,8,40,173,نحاس,Water Blocking SCWB,1,185,3100,TK-9056,1,2.30,ENG_ABDO2,2026-10-14 11:45,1,REC-046,PO-146,شريط عازل مانع للماء,PAL-46,1.80,0.00,0.00,0.00,SC-596,RC-246,3100
+ORD-2026-1047,2026-10-14,S2,10,41,174,نحاس,Non-Conductive Tape,1,185,3100,TK-9057,1,2.45,ENG_HAZEM,2026-10-14 19:00,1,REC-047,PO-147,تثبيت وتغطية الحزام,PAL-47,1.80,0.00,0.00,0.00,SC-597,RC-247,3100
+ORD-2026-1048,2026-10-14,S2,13,43,175,ألومنيوم,Laminated Al Tape,1,300,2100,TK-9058,1,1.95,ENG_ESMAT,2026-10-14 19:30,1,REC-048,PO-148,شريط حماية مصفح ألومنيوم,PAL-48,0.00,0.85,0.00,0.00,SC-598,RC-248,2100
+ORD-2026-1049,2026-10-14,S3,15,49,176,نحاس,Steel Wire Armour Heavy,3,240,1800,TK-9059,1,9.80,ENG_MAHER,2026-10-15 03:00,1,REC-049,PO-149,تسليح ثقيل للدفن المباشر,PAL-49,5.20,0.00,0.00,3.40,SC-599,RC-249,1800
+ORD-2026-1050,2026-10-14,S3,16,50,177,ألومنيوم,Aluminium Wire Armour,1,400,2200,TK-9060,1,5.10,ENG_RAMADAN,2026-10-15 03:30,1,REC-050,PO-150,تسليح أحادي ألومنيوم AWA,PAL-50,0.00,3.60,0.00,1.20,SC-600,RC-250,2200
+ORD-2026-1051,2026-10-14,S1,20,53,184,نحاس,Fire Resistant Mica,1,95,3400,TK-9061,1,3.80,ENG_ADEL,2026-10-14 12:00,1,REC-051,PO-151,شريط ميكا مقاوم للحريق 950C,PAL-51,3.20,0.00,0.00,0.00,SC-601,RC-251,3400
+ORD-2026-1052,2026-10-14,S2,21,57,185,نحاس,Steel Tape Armour STA,4,50,2600,TK-9062,1,7.40,ENG_HOSSEIN,2026-10-14 20:00,1,REC-052,PO-152,شريط فولاذي مجلفن مزدوج,PAL-52,4.10,0.00,0.00,2.10,SC-602,RC-252,2600
+ORD-2026-1053,2026-10-14,S3,22,44,186,نحاس,Copper Tape Shielding,3,95,2900,TK-9063,1,4.20,ENG_ALI2,2026-10-15 04:00,1,REC-053,PO-153,تدريع شريط نحاسي متراكب,PAL-53,3.60,0.00,0.60,0.00,SC-603,RC-253,2900
+ORD-2026-1054,2026-10-14,S1,1,1,188,نحاس,Bare Copper Wire,1,2.58,16200,TK-9064,1,3.65,ENG_MOSTAFA2,2026-10-14 12:30,1,REC-054,PO-154,سحب سرعة 30 م/ث,PAL-54,3.65,0.00,0.00,0.00,SC-604,RC-254,16200
+ORD-2026-1055,2026-10-14,S2,2,14,189,ألومنيوم,Stranded Sector Shape,4,120,3100,TK-9065,1,4.80,ENG_AZIZ,2026-10-14 20:30,1,REC-055,PO-155,تجديل قطاعي للألومنيوم,PAL-55,0.00,3.80,0.00,0.00,SC-605,RC-255,3100
+ORD-2026-1056,2026-10-14,S3,5,33,190,نحاس,LSOH Fire Safety,1,120,3100,TK-9066,1,5.30,ENG_FOUAD,2026-10-15 04:30,1,REC-056,PO-156,عزل زيرو هالوجين للمستشفيات,PAL-56,4.10,0.00,0.00,0.00,SC-606,RC-256,3100
+ORD-2026-1057,2026-10-14,F1,17,33,194,نحاس,LSOH Outer Jacket,4,16,5200,TK-9067,1,4.90,ENG_YAHIA,2026-10-14 11:00,1,REC-057,PO-157,غلاف برتقالي خالي من الهالوجين,PAL-57,3.20,0.00,0.00,0.00,SC-607,RC-257,5200
+ORD-2026-1058,2026-10-14,S1,19,75,195,ألومنيوم,Inspection & Rewind,3,70,3600,TK-9068,1,4.80,ENG_SHEHATA,2026-10-14 13:00,1,REC-058,PO-158,فحص ومطابقة الجودة النهائية,PAL-58,0.00,2.80,0.00,0.00,SC-608,RC-258,3600
+ORD-2026-1059,2026-10-14,S2,18,72,196,نحاس,Flexible Coils,1,2.5,20000,TK-9069,1,1.80,ENG_BANDARY,2026-10-14 21:00,1,REC-059,PO-159,تغليف بالانكماش الحراري,PAL-59,1.40,0.00,0.00,0.00,SC-609,RC-259,20000
+ORD-2026-1060,2026-10-14,S3,6,34,197,نحاس,MV Power Cable,1,185,2600,TK-9070,1,7.20,ENG_FATHY,2026-10-15 05:00,1,REC-060,PO-160,تشغيل ليلي مستمر CCV,PAL-60,5.10,0.00,0.00,0.00,SC-610,RC-260,2600
+ORD-2026-1061,2026-10-14,S1,4,63,198,نحاس,Bunching 7x4,4,4,8200,TK-9071,1,3.40,ENG_SALAH3,2026-10-14 13:30,1,REC-061,PO-161,حزم مرنة دقيقة,PAL-61,3.40,0.00,0.00,0.00,SC-611,RC-261,8200
+ORD-2026-1062,2026-10-14,S2,11,17,200,نحاس,Drum Twister Cabling,3,150,2200,TK-9072,1,6.80,ENG_MOSLEM,2026-10-14 21:30,1,REC-062,PO-162,تجميع ثلاثي دائري,PAL-62,4.80,0.00,0.00,0.00,SC-612,RC-262,2200
+ORD-2026-1063,2026-10-14,S3,14,51,204,نحاس,Heavy SWA Armour,3,150,2200,TK-9073,1,9.60,ENG_SHAHAT2,2026-10-15 05:30,1,REC-063,PO-163,تسليح كابلات شبكات توزيع,PAL-63,4.80,0.00,0.00,2.60,SC-613,RC-263,2200
+ORD-2026-1064,2026-10-14,F1,1,3,205,ألومنيوم,Drawing AL High,1,3.00,19000,TK-9074,1,2.95,ENG_HASSAN2,2026-10-14 11:30,1,REC-064,PO-164,سحب ألومنيوم EC grade,PAL-64,0.00,2.95,0.00,0.00,SC-614,RC-264,19000
+ORD-2026-1065,2026-10-14,F2,6,35,206,نحاس,CCV Line Extrusion,1,400,1900,TK-9075,1,8.90,ENG_SAMIR,2026-10-14 18:00,1,REC-065,PO-165,بثق 66 ك ف فائق النقاء,PAL-65,6.80,0.00,0.00,0.00,SC-615,RC-265,19000
+ORD-2026-1066,2026-10-14,S1,5,20,207,نحاس,Single Core PVC,1,35,4600,TK-9076,1,4.10,ENG_IBRAHIM2,2026-10-14 13:45,1,REC-066,PO-166,عزل موصلات أرضية,PAL-66,3.40,0.00,0.00,0.00,SC-616,RC-266,4600
+ORD-2026-1067,2026-10-14,S2,5,21,208,نحاس,Single Core PVC,1,70,3900,TK-9077,1,4.90,ENG_HASSANEIN,2026-10-14 22:00,1,REC-067,PO-167,عزل كابلات إضاءة وإنارة,PAL-67,3.90,0.00,0.00,0.00,SC-617,RC-267,3900
+ORD-2026-1068,2026-10-14,S3,18,73,209,ألومنيوم,Coiling Line,1,16,12000,TK-9078,1,2.80,ENG_ADEL2,2026-10-15 05:45,1,REC-068,PO-168,تعبئة وتغليف كرتون,PAL-68,0.00,1.90,0.00,0.00,SC-618,RC-268,12000
+ORD-2026-1069,2026-10-14,S1,78,78,210,نحاس,Single Twist Assembly,7,1.5,14500,TK-9079,1,3.15,ENG_OMAR,2026-10-14 14:00,1,REC-069,PO-169,كابلات تحكم وإشارة,PAL-69,2.80,0.00,0.00,0.00,SC-619,RC-269,14500
+ORD-2026-1070,2026-10-14,S2,78,78,216,نحاس,Single Twist Assembly,12,1.5,11000,TK-9080,1,3.60,ENG_KHALIL,2026-10-14 22:30,1,REC-070,PO-170,كابلات تحكم متعددة الأطراف,PAL-70,3.10,0.00,0.00,0.00,SC-620,RC-270,11000`;
+
+      parseCSVData(sampleCSV);
+    }
+
+    let lastCSVContent = null;
+    let autoSyncTimer = null;
+
+    async function loadProjectCSV(silent = false) {
+      const filePath = './production_data.csv';
+
+      try {
+        const response = await fetch(`${filePath}?_t=${Date.now()}`);
+        if (response.ok) {
+          const csvText = await response.text();
+
+          if (silent && csvText === lastCSVContent) {
+            return true;
+          }
+
+          const isUpdate = (lastCSVContent !== null && csvText !== lastCSVContent);
+          lastCSVContent = csvText;
+
+          try {
+            localStorage.setItem('energya_saved_csv_data', csvText);
+            localStorage.setItem('energya_saved_csv_name', 'production_data.csv');
+            localStorage.setItem('energya_saved_csv_time', new Date().toISOString());
+          } catch (e) {}
+
+          parseCSVData(csvText);
+
+          const badge = document.getElementById('csv-sync-badge');
+          if (badge) {
+            const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>متصل بالملف: <b class="font-mono">production_data.csv</b> (${rawRecords.length} سجل - ${timeStr})</span>`;
+            badge.classList.remove('hidden');
+          }
+
+          if (isUpdate) {
+            showToast(`تم اكتشاف تحديث وتطبيق البيانات فوراً من (production_data.csv) [${rawRecords.length} سجل]!`, 'success');
+          } else if (!silent) {
+            showToast(`تم تحميل بيانات الإنتاج بنجاح من (production_data.csv) [${rawRecords.length} سجل]`, 'success');
+          }
+          return true;
+        }
+      } catch (e) {
+        console.warn('Could not fetch production_data.csv:', e.message);
+      }
+
+      // Check localStorage for previously saved data
+      try {
+        const savedCSV = localStorage.getItem('energya_saved_csv_data');
+        const savedName = localStorage.getItem('energya_saved_csv_name') || 'الملف المحفوظ';
+        if (savedCSV && savedCSV.trim().length > 0) {
+          if (!silent) {
+            parseCSVData(savedCSV);
+            const badge = document.getElementById('csv-sync-badge');
+            if (badge) {
+              badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span><span>محمل من الذاكرة: <b class="font-mono">${savedName}</b></span>`;
+              badge.classList.remove('hidden');
+            }
+            showToast(`تم استرجاع بيانات (${savedName}) المحفوظة سابقاً تلقائياً!`, 'success');
+            return true;
+          }
+        }
+      } catch (e) {}
+
+      if (!silent) {
+        loadSampleData();
+        showToast('لربط الملف المباشر والتحديث التلقائي، شغّل المشروع بنقرة واحدة عبر: تشغيل_المشروع.bat', 'info');
+      }
+      return false;
+    }
+
+    function startAutoSync(intervalSeconds = 30) {
+      if (autoSyncTimer) clearInterval(autoSyncTimer);
+      autoSyncTimer = setInterval(() => {
+        loadProjectCSV(true);
+      }, intervalSeconds * 1000);
+    }
+
+    function setupDragAndDrop() {
+      window.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+          const file = files[0];
+          if (file.name.endsWith('.csv') || file.type.includes('csv') || file.type.includes('text')) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              const csvText = evt.target.result;
+              try {
+                localStorage.setItem('energya_saved_csv_data', csvText);
+                localStorage.setItem('energya_saved_csv_name', file.name);
+                localStorage.setItem('energya_saved_csv_time', new Date().toISOString());
+              } catch (err) {}
+              parseCSVData(csvText);
+              const badge = document.getElementById('csv-sync-badge');
+              if (badge) {
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>تم إفلات الملف: <b class="font-mono">${file.name}</b></span>`;
+                badge.classList.remove('hidden');
+              }
+              showToast(`تم قراءة وحفظ ملف (${file.name}) بنجاح!`, 'success');
+            };
+            reader.readAsText(file);
+          }
+        }
+      });
+    }
+
+    /* =========================================================================
+       16. INITIALIZATION ON PAGE LOAD
+       ========================================================================= */
+    window.addEventListener('DOMContentLoaded', async () => {
+      initDropdowns();
+      init3DScene();
+      setupDragAndDrop();
+      const loaded = await loadProjectCSV(false);
+      if (!loaded) {
+        loadSampleData();
+      }
+      startAutoSync(30);
+    });
+  </script>
+
+</body>
+</html>
